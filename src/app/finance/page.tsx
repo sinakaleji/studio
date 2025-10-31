@@ -21,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, Timestamp, query, orderBy, limit } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,7 +55,7 @@ export default function FinancePage() {
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'financial_transactions');
+    return query(collection(firestore, 'financial_transactions'), orderBy('date', 'desc'));
   }, [firestore]);
 
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
@@ -89,6 +89,10 @@ export default function FinancePage() {
           <CardContent>
             {isLoading ? (
               <p>در حال بارگذاری...</p>
+            ) : !transactions || transactions.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هنوز هیچ تراکنشی ثبت نشده است.</p>
+                </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -107,7 +111,7 @@ export default function FinancePage() {
                         <span
                           className={cn(
                             'rounded-full px-2 py-1 text-xs',
-                            tx.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            tx.type === 'income' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           )}
                         >
                           {tx.type === 'income' ? 'درآمد' : 'هزینه'}

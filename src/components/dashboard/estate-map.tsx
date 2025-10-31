@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Home, Edit, Trash2 } from 'lucide-react';
@@ -57,12 +57,12 @@ export default function EstateMap() {
     const { data: villas, isLoading: isLoadingVillas } = useCollection<Villa>(villasQuery);
     const { data: stakeholders, isLoading: isLoadingStakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
 
-    const stakeholderMap = useMemoFirebase(() => {
+    const stakeholderMap = useMemo(() => {
         if (!stakeholders) return new Map();
         return new Map(stakeholders.map(s => [s.id, s.name]));
     }, [stakeholders]);
 
-    const villasWithOwners = useMemoFirebase(() => {
+    const villasWithOwners = useMemo(() => {
         return villas?.map(v => ({
             ...v,
             ownerName: stakeholderMap.get(v.ownerId) || 'نامشخص'
@@ -124,44 +124,57 @@ export default function EstateMap() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative aspect-video w-full overflow-auto rounded-lg border bg-gray-100 dark:bg-gray-800 p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {isLoadingVillas && <p>در حال بارگذاری ویلاها...</p>}
-                            {villasWithOwners?.map(villa => (
-                                <div key={villa.id} className="group relative">
-                                    <Card className="flex flex-col items-center justify-center p-4 aspect-square transition-all hover:shadow-lg hover:scale-105">
-                                        <Home className="w-8 h-8 text-primary mb-2" />
-                                        <Badge variant="secondary" className="mb-1">{villa.villaNumber}</Badge>
-                                        <p className="text-xs text-center text-muted-foreground truncate">{villa.ownerName}</p>
-                                    </Card>
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-                                        <Button variant="outline" size="icon" className="text-white border-white hover:bg-white/20" onClick={() => handleEdit(villa)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                             <Button variant="destructive" size="icon">
-                                               <Trash2 className="h-4 w-4" />
-                                             </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>آیا مطمئن هستید؟</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                این عمل غیرقابل بازگشت است. ویلای {villa.villaNumber} برای همیشه حذف خواهد شد.
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>انصراف</AlertDialogCancel>
-                                              <AlertDialogAction onClick={() => handleDelete(villa.id)}>حذف</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                </div>
-                            ))}
+                    {isLoadingVillas && <p>در حال بارگذاری ویلاها...</p>}
+                    {!isLoadingVillas && villasWithOwners.length === 0 && (
+                         <div className="flex items-center justify-center h-full aspect-video w-full rounded-lg border border-dashed bg-gray-100 dark:bg-gray-800 p-4">
+                            <div className="text-center">
+                                <p className="text-muted-foreground">هیچ ویلایی ثبت نشده است.</p>
+                                <Button onClick={handleAddNew} className="mt-4">
+                                    <PlusCircle className="ml-2 h-4 w-4" />
+                                    افزودن اولین ویلا
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    )}
+                     {!isLoadingVillas && villasWithOwners.length > 0 && (
+                        <div className="relative aspect-video w-full overflow-auto rounded-lg border bg-gray-100 dark:bg-gray-800 p-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {villasWithOwners?.map(villa => (
+                                    <div key={villa.id} className="group relative">
+                                        <Card className="flex flex-col items-center justify-center p-4 aspect-square transition-all hover:shadow-lg hover:scale-105">
+                                            <Home className="w-8 h-8 text-primary mb-2" />
+                                            <Badge variant="secondary" className="mb-1">{villa.villaNumber}</Badge>
+                                            <p className="text-xs text-center text-muted-foreground truncate">{villa.ownerName}</p>
+                                        </Card>
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+                                            <Button variant="outline" size="icon" className="text-white border-white hover:bg-white/20" onClick={() => handleEdit(villa)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="icon">
+                                                <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>آیا مطمئن هستید؟</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    این عمل غیرقابل بازگشت است. ویلای {villa.villaNumber} برای همیشه حذف خواهد شد.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>انصراف</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(villa.id)}>حذف</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                     )}
                 </CardContent>
             </Card>
             
@@ -190,7 +203,7 @@ export default function EstateMap() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>مالک</FormLabel>
-                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value ?? ''}>
                                         <FormControl>
                                           <SelectTrigger>
                                             <SelectValue placeholder="مالک ویلا را انتخاب کنید" />

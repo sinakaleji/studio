@@ -1,10 +1,10 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Save } from 'lucide-react';
+import { PlusCircle, Save, Eye, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,47 +19,68 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, where, query, getDocs, Timestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/provider';
+import { getMonth, getYear, lastDayOfMonth, format } from 'date-fns';
+import { faIR } from 'date-fns/locale';
+import PayslipDialog from './_components/payslip-dialog';
 
 const payrollSchema = z.object({
   personnelId: z.string().min(1, 'انتخاب پرسنل الزامی است'),
   salary: z.coerce.number().min(0, 'حقوق پایه الزامی است'),
-  deductions: z.coerce.number().min(0, 'کسورات الزامی است'),
-  overtimeHours: z.coerce.number().min(0, 'ساعات اضافه کاری الزامی است'),
+  month: z.string().min(1, 'انتخاب ماه الزامی است'),
 });
 
 type PayrollFormData = z.infer<typeof payrollSchema>;
 type Personnel = { id: string; firstName: string; lastName: string; jobTitle: string; };
-type Payroll = PayrollFormData & { id: string; payDate: any; netPay: number; personnelName?: string };
+type Attendance = { id: string; status: 'present' | 'absent'; entryTime?: string; exitTime?: string; };
+type PayrollSettings = { insuranceRate: number; taxBrackets: { from: number; to: number; rate: number }[] };
+type Payroll = {
+    id: string;
+    personnelId: string;
+    personnelName: string;
+    payDate: Timestamp;
+    month: string;
+    baseSalary: number;
+    overtimeHours: number;
+    overtimePay: number;
+    totalEarnings: number;
+    insuranceDeduction: number;
+    taxDeduction: number;
+    totalDeductions: number;
+    netPay: number;
+};
+
 
 const OVERTIME_RATE = 1.4; // ضریب اضافه کاری طبق قانون کار
+const WORK_HOURS_PER_MONTH = 192; // ساعات کاری ماهانه طبق قانون کار
 
 export default function PayrollPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [selectedPayslip, setSelectedPayslip] = useState<Payroll | null>(null);
+
   const { firestore } = useFirebase();
   const { toast } = useToast();
 
   const form = useForm<PayrollFormData>({
     resolver: zodResolver(payrollSchema),
-    defaultValues: {
-      personnelId: '',
-      salary: 0,
-      deductions: 0,
-      overtimeHours: 0,
-    },
+    defaultValues: { personnelId: '', salary: 0, month: '' },
   });
 
   const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
   const { data: personnel, isLoading: isLoadingPersonnel } = useCollection<Personnel>(personnelQuery);
 
-  const payrollsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'payrolls') : null, [firestore]);
+  const payrollsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payrolls'), where('month', '==', form.watch('month') || '')) : null, [firestore, form.watch('month')]);
   const { data: payrolls, isLoading: isLoadingPayrolls } = useCollection<Payroll>(payrollsQuery);
+
+  const payrollSettingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'payroll_settings', 'default') : null, [firestore]);
+  const { data: payrollSettings } = useDoc<PayrollSettings>(payrollSettingsDoc);
 
   const personnelMap = useMemo(() => {
     if (!personnel) return new Map();
@@ -73,52 +94,138 @@ export default function PayrollPage() {
       })) ?? [];
   }, [payrolls, personnelMap]);
 
+  const months = useMemo(() => {
+    const monthOptions: { label: string; value: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        monthOptions.push({
+            label: format(date, 'MMMM yyyy', { locale: faIR }),
+            value: format(date, 'yyyy-MM'),
+        });
+    }
+    return monthOptions;
+  }, []);
 
-  const calculateNetPay = (salary: number, overtimeHours: number, deductions: number): number => {
-    const hourlyRate = salary / 192; // ساعات کاری ماهانه
-    const overtimePay = overtimeHours * hourlyRate * OVERTIME_RATE;
-    const netPay = salary + overtimePay - deductions;
-    return Math.max(0, netPay);
-  };
+  useEffect(() => {
+    if (months.length > 0 && !form.getValues('month')) {
+      form.setValue('month', months[0].value);
+    }
+  }, [months, form]);
 
-  const onSubmit = (data: PayrollFormData) => {
-    if (!firestore) return;
 
-    const netPay = calculateNetPay(data.salary, data.overtimeHours, data.deductions);
+  const calculatePayroll = async (data: PayrollFormData) => {
+    if (!firestore || !payrollSettings) {
+        toast({ variant: 'destructive', title: 'خطا', description: 'تنظیمات حقوق و دستمزد بارگذاری نشده است.' });
+        return;
+    }
+
+    setIsCalculating(true);
     
-    const payrollData = {
-      ...data,
-      netPay,
-      payDate: serverTimestamp(),
-    };
+    // 1. Fetch Attendance Data
+    const [year, month] = data.month.split('-').map(Number);
+    const startDate = `${data.month}-01`;
+    const endDate = format(lastDayOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd');
 
-    addDocumentNonBlocking(collection(firestore, 'payrolls'), payrollData);
-    toast({
-      title: 'موفقیت‌آمیز',
-      description: 'فیش حقوقی جدید با موفقیت ثبت شد.',
+    const attendanceQuery = query(
+        collection(firestore, 'attendances'),
+        where('personnelId', '==', data.personnelId),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+    );
+    const attendanceSnapshot = await getDocs(attendanceQuery);
+    const attendances = attendanceSnapshot.docs.map(doc => doc.data() as Attendance);
+
+    // 2. Calculate Hours
+    let totalWorkHours = 0;
+    attendances.forEach(att => {
+        if (att.status === 'present' && att.entryTime && att.exitTime) {
+            const entry = new Date(`1970-01-01T${att.entryTime}`);
+            const exit = new Date(`1970-01-01T${att.exitTime}`);
+            const diff = (exit.getTime() - entry.getTime()) / (1000 * 60 * 60); // difference in hours
+            totalWorkHours += diff > 0 ? diff : 0;
+        }
     });
+
+    const overtimeHours = Math.max(0, totalWorkHours - WORK_HOURS_PER_MONTH);
+    const hourlyRate = data.salary / WORK_HOURS_PER_MONTH;
+    const overtimePay = overtimeHours * hourlyRate * OVERTIME_RATE;
+    const totalEarnings = data.salary + overtimePay;
+
+    // 3. Calculate Deductions
+    const insuranceDeduction = totalEarnings * (payrollSettings.insuranceRate / 100);
+    
+    let taxDeduction = 0;
+    let taxableIncome = totalEarnings;
+    payrollSettings.taxBrackets.forEach(bracket => {
+        if (taxableIncome > bracket.from) {
+            const incomeInBracket = Math.min(taxableIncome, bracket.to) - bracket.from;
+            if (incomeInBracket > 0) {
+                taxDeduction += incomeInBracket * (bracket.rate / 100);
+            }
+        }
+    });
+    
+    const totalDeductions = insuranceDeduction + taxDeduction;
+    const netPay = totalEarnings - totalDeductions;
+
+    // 4. Create Payroll Document
+    const payrollData = {
+      personnelId: data.personnelId,
+      personnelName: personnelMap.get(data.personnelId) || 'نامشخص',
+      payDate: serverTimestamp(),
+      month: data.month,
+      baseSalary: data.salary,
+      overtimeHours: parseFloat(overtimeHours.toFixed(2)),
+      overtimePay: parseFloat(overtimePay.toFixed(2)),
+      totalEarnings: parseFloat(totalEarnings.toFixed(2)),
+      insuranceDeduction: parseFloat(insuranceDeduction.toFixed(2)),
+      taxDeduction: parseFloat(taxDeduction.toFixed(2)),
+      totalDeductions: parseFloat(totalDeductions.toFixed(2)),
+      netPay: parseFloat(netPay.toFixed(2)),
+    };
+    
+    await addDocumentNonBlocking(collection(firestore, 'payrolls'), payrollData);
+
+    setIsCalculating(false);
+    setIsFormOpen(false);
     form.reset();
-    setIsDialogOpen(false);
+    toast({ title: 'موفقیت‌آمیز', description: 'فیش حقوقی جدید با موفقیت محاسبه و ثبت شد.' });
   };
+
 
   return (
     <AppLayout>
       <Header title="حقوق و دستمزد" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <CardTitle>لیست حقوق و دستمزد</CardTitle>
               <CardDescription>ثبت و مشاهده فیش‌های حقوقی پرسنل</CardDescription>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)} disabled={isLoadingPersonnel}>
-              <PlusCircle className="ml-2 h-4 w-4" />
-              صدور فیش حقوقی
-            </Button>
+            <div className='flex items-center gap-2'>
+                 <Select value={form.watch('month')} onValueChange={(value) => form.setValue('month', value)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="ماه را انتخاب کنید" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                 </Select>
+                 <Button onClick={() => setIsFormOpen(true)} disabled={isLoadingPersonnel}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    صدور فیش حقوقی
+                </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoadingPayrolls ? (
               <p>در حال بارگذاری...</p>
+            ) : !payrollsWithNames || payrollsWithNames.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هیچ فیش حقوقی برای ماه انتخاب شده ثبت نشده است.</p>
+                </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -126,20 +233,24 @@ export default function PayrollPage() {
                     <TableHead>نام پرسنل</TableHead>
                     <TableHead>حقوق پایه</TableHead>
                     <TableHead>اضافه کاری</TableHead>
-                    <TableHead>کسورات</TableHead>
                     <TableHead>حقوق خالص</TableHead>
                     <TableHead>تاریخ پرداخت</TableHead>
+                    <TableHead>عملیات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payrollsWithNames.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.personnelName}</TableCell>
-                      <TableCell>{p.salary.toLocaleString('fa-IR')} تومان</TableCell>
+                      <TableCell>{p.baseSalary.toLocaleString('fa-IR')} تومان</TableCell>
                       <TableCell>{p.overtimeHours.toLocaleString('fa-IR')} ساعت</TableCell>
-                      <TableCell>{p.deductions.toLocaleString('fa-IR')} تومان</TableCell>
                       <TableCell className="font-bold text-green-600">{p.netPay.toLocaleString('fa-IR')} تومان</TableCell>
                       <TableCell>{p.payDate ? new Date(p.payDate.seconds * 1000).toLocaleDateString('fa-IR') : '...'}</TableCell>
+                      <TableCell>
+                          <Button variant="outline" size="icon" onClick={() => setSelectedPayslip(p)}>
+                              <Eye className="h-4 w-4" />
+                          </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -149,14 +260,14 @@ export default function PayrollPage() {
         </Card>
       </main>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>صدور فیش حقوقی جدید</DialogTitle>
-            <DialogDescription>اطلاعات حقوقی را برای پرسنل مورد نظر وارد کنید.</DialogDescription>
+            <DialogDescription>پرسنل و حقوق پایه را برای محاسبه اتوماتیک فیش حقوقی وارد کنید.</DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(calculatePayroll)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="personnelId"
@@ -186,7 +297,7 @@ export default function PayrollPage() {
                 name="salary"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>حقوق پایه (تومان)</FormLabel>
+                    <FormLabel>حقوق پایه ماهانه (تومان)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="مثال: 10000000" {...field} />
                     </FormControl>
@@ -194,42 +305,34 @@ export default function PayrollPage() {
                   </FormItem>
                 )}
               />
-               <FormField
-                control={form.control}
-                name="overtimeHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ساعات اضافه کاری</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="مثال: 20" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="deductions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>کسورات (بیمه، مالیات و...)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="مثال: 1500000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">انصراف</Button>
+                  <Button type="button" variant="outline" disabled={isCalculating}>انصراف</Button>
                 </DialogClose>
-                <Button type="submit"><Save className="ml-2 h-4 w-4" /> ذخیره</Button>
+                <Button type="submit" disabled={isCalculating}>
+                    {isCalculating ? (
+                        <>
+                            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            در حال محاسبه...
+                        </>
+                    ) : (
+                        <><Save className="ml-2 h-4 w-4" /> محاسبه و ذخیره</>
+                    )}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
+      
+      {selectedPayslip && (
+          <PayslipDialog
+            payslip={selectedPayslip}
+            open={!!selectedPayslip}
+            onOpenChange={(open) => !open && setSelectedPayslip(null)}
+          />
+      )}
+
     </AppLayout>
   );
 }

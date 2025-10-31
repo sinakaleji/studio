@@ -110,6 +110,10 @@ export default function StakeholdersPage() {
           <CardContent>
             {isLoading ? (
               <p>در حال بارگذاری...</p>
+            ) : !stakeholders || stakeholders.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هنوز هیچ ذی‌نفعی ثبت نشده است.</p>
+                </div>
             ) : (
                 <Table>
                     <TableHeader>

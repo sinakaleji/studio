@@ -118,6 +118,10 @@ export default function PersonnelPage() {
           <CardContent>
             {isLoading ? (
               <p>در حال بارگذاری...</p>
+            ) : !personnel || personnel.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هنوز هیچ پرسنلی ثبت نشده است.</p>
+                </div>
             ) : (
                 <Table>
                     <TableHeader>

@@ -1,6 +1,6 @@
 'use server';
 
-import { writeBatch, Firestore, collection, getDocs, doc } from 'firebase/firestore';
+import { writeBatch, Firestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 const stakeholdersData = [
     { id: 'sh_rezaei', name: 'خانواده رضایی', email: 'rezaei@email.com', contactNumber: '09121111111' },
@@ -18,24 +18,35 @@ const villasData = [
 ];
 
 const personnelData = [
-    { id: 'p_alikarimi', firstName: 'علی', lastName: 'کریمی', jobTitle: 'مدیر داخلی', contactNumber: '09121112233' },
-    { id: 'p_maryamhosseini', firstName: 'مریم', lastName: 'حسینی', jobTitle: 'مسئول پذیرش', contactNumber: '09124445566' },
-    { id: 'p_rezasadeghi', firstName: 'رضا', lastName: 'صادقی', jobTitle: 'نگهبان', contactNumber: '09127778899' },
-    { id: 'p_saramoradi', firstName: 'سارا', lastName: 'مرادی', jobTitle: 'باغبان', contactNumber: '09120001122' },
+    { id: 'p_alikarimi', firstName: 'علی', lastName: 'کریمی', jobTitle: 'مدیر داخلی', contactNumber: '09121112233', accountNumber: 'IR123456789012345678901234', insuranceNumber: '1234567890' },
+    { id: 'p_maryamhosseini', firstName: 'مریم', lastName: 'حسینی', jobTitle: 'مسئول پذیرش', contactNumber: '09124445566', accountNumber: 'IR234567890123456789012345', insuranceNumber: '2345678901' },
+    { id: 'p_rezasadeghi', firstName: 'رضا', lastName: 'صادقی', jobTitle: 'نگهبان', contactNumber: '09127778899', accountNumber: 'IR345678901234567890123456', insuranceNumber: '3456789012' },
+    { id: 'p_saramoradi', firstName: 'سارا', lastName: 'مرادی', jobTitle: 'باغبان', contactNumber: '09120001122', accountNumber: 'IR456789012345678901234567', insuranceNumber: '4567890123' },
 ];
 
 const transactionsData = [
     { description: 'شارژ ماهانه ویلا A101', amount: 500000, type: 'income', date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
     { description: 'هزینه باغبانی و فضای سبز', amount: 2500000, type: 'expense', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-    { description: 'پرداخت حقوق پرسنل (آبان)', amount: 55000000, type: 'expense', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+    { description: 'پرداخت حقوق پرسنل (مهر)', amount: 55000000, type: 'expense', date: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
     { description: 'شارژ ماهانه ویلا B205', amount: 750000, type: 'income', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
     { description: 'خرید تجهیزات نظافتی', amount: 1200000, type: 'expense', date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
     { description: 'شارژ ماهانه ویلا C110', amount: 600000, type: 'income', date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
+    { description: 'پرداخت قبض برق عمومی', amount: 3500000, type: 'expense', date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
 ];
 
 const payrollsData = [
-    { personnelId: 'p_alikarimi', salary: 15000000, deductions: 2000000, overtimeHours: 10, netPay: 14104167, payDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-    { personnelId: 'p_maryamhosseini', salary: 10000000, deductions: 1500000, overtimeHours: 5, netPay: 8864583, payDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+    { personnelId: 'p_alikarimi', salary: 15000000, deductions: 2000000, overtimeHours: 10, netPay: 14104167, payDate: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
+    { personnelId: 'p_maryamhosseini', salary: 10000000, deductions: 1500000, overtimeHours: 5, netPay: 8864583, payDate: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
+];
+
+const attendanceData = [
+    // Some random data for the last month
+    { personnelId: 'p_alikarimi', date: '2023-10-01', status: 'present', entryTime: '08:50', exitTime: '18:05', isLate: false },
+    { personnelId: 'p_maryamhosseini', date: '2023-10-01', status: 'present', entryTime: '09:15', exitTime: '17:30', isLate: true },
+    { personnelId: 'p_rezasadeghi', date: '2023-10-01', status: 'present', entryTime: '19:00', exitTime: '07:00', isLate: false },
+    { personnelId: 'p_saramoradi', date: '2023-10-01', status: 'absent' },
+    { personnelId: 'p_alikarimi', date: '2023-10-02', status: 'present', entryTime: '08:45', exitTime: '18:00', isLate: false },
+    { personnelId: 'p_maryamhosseini', date: '2023-10-02', status: 'present', entryTime: '08:58', exitTime: '17:35', isLate: false },
 ];
 
 const estateData = {
@@ -46,6 +57,18 @@ const estateData = {
 };
 const ESTATE_DOC_ID = "main-estate-info";
 
+const payrollSettingsData = {
+    insuranceRate: 7, // 7%
+    taxBrackets: [
+        { from: 0, to: 10000000, rate: 0 },
+        { from: 10000001, to: 14000000, rate: 10 },
+        { from: 14000001, to: 23000000, rate: 15 },
+        { from: 23000001, to: 34000000, rate: 20 },
+        { from: 34000001, to: Infinity, rate: 30 },
+    ]
+};
+const PAYROLL_SETTINGS_DOC_ID = 'default';
+
 async function seedCollection(firestore: Firestore, collectionName: string, data: any[], idField?: keyof any) {
   const collectionRef = collection(firestore, collectionName);
   const snapshot = await getDocs(collectionRef);
@@ -53,8 +76,15 @@ async function seedCollection(firestore: Firestore, collectionName: string, data
     console.log(`Seeding ${collectionName}...`);
     const batch = writeBatch(firestore);
     data.forEach(item => {
-      const docId = idField && item[idField] ? String(item[idField]) : undefined;
-      const docRef = docId ? doc(collectionRef, docId) : doc(collectionRef);
+      let docRef;
+      if(idField && item[idField]) {
+         const id = collectionName === 'attendances' 
+            ? `${item.date}_${item.personnelId}` 
+            : String(item[idField]);
+         docRef = doc(collectionRef, id);
+      } else {
+         docRef = doc(collectionRef);
+      }
       batch.set(docRef, item);
     });
     await batch.commit();
@@ -64,14 +94,27 @@ async function seedCollection(firestore: Firestore, collectionName: string, data
   }
 }
 
+async function seedSingleDoc(firestore: Firestore, collectionName: string, docId: string, data: any) {
+    const docRef = doc(firestore, collectionName, docId);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+        console.log(`Seeding document ${collectionName}/${docId}...`);
+        await writeBatch(firestore).set(docRef, data).commit();
+        console.log(`Document ${collectionName}/${docId} seeded successfully.`);
+    } else {
+        console.log(`Document ${collectionName}/${docId} already exists, merging data...`);
+        await writeBatch(firestore).set(docRef, data, { merge: true }).commit();
+        console.log(`Document ${collectionName}/${docId} merged successfully.`);
+    }
+}
+
 
 export async function seedDatabase(firestore: Firestore) {
     try {
-        const mainEstateDocRef = doc(firestore, 'estates', ESTATE_DOC_ID);
-        const batch = writeBatch(firestore);
-        batch.set(mainEstateDocRef, estateData, { merge: true });
-        await batch.commit();
-        console.log('Estate info seeded.');
+        await Promise.all([
+            seedSingleDoc(firestore, 'estates', ESTATE_DOC_ID, estateData),
+            seedSingleDoc(firestore, 'payroll_settings', PAYROLL_SETTINGS_DOC_ID, payrollSettingsData)
+        ]);
 
         await Promise.all([
             seedCollection(firestore, 'stakeholders', stakeholdersData, 'id'),
@@ -81,10 +124,12 @@ export async function seedDatabase(firestore: Firestore) {
         await Promise.all([
             seedCollection(firestore, 'villas', villasData),
             seedCollection(firestore, 'financial_transactions', transactionsData),
-            seedCollection(firestore, 'payrolls', payrollsData)
+            // We are commenting out payrolls and attendance seeding to allow users to generate them
+            // seedCollection(firestore, 'payrolls', payrollsData),
+            // seedCollection(firestore, 'attendances', attendanceData, 'id')
         ]);
 
-        console.log("Database seeded successfully.");
+        console.log("Database seeding process completed.");
     } catch(error) {
         console.error("Error seeding database: ", error);
     }

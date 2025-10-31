@@ -132,6 +132,10 @@ export default function VillasPage() {
           <CardContent>
             {isLoadingVillas ? (
               <p>در حال بارگذاری...</p>
+            ) : !villas || villas.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هنوز هیچ ویلایی ثبت نشده است.</p>
+                </div>
             ) : (
               <Table>
                 <TableHeader>

@@ -4,7 +4,7 @@ import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Upload, File, Trash2, Download } from 'lucide-react';
+import { PlusCircle, Upload, File, Trash2, Download, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, Timestamp, query, orderBy } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -60,7 +60,7 @@ export default function DocumentsPage() {
 
   const documentsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'documents');
+    return query(collection(firestore, 'documents'), orderBy('uploadDate', 'desc'));
   }, [firestore]);
 
   const { data: documents, isLoading } = useCollection<Document>(documentsQuery);
@@ -146,6 +146,10 @@ export default function DocumentsPage() {
             <CardContent>
                {isLoading ? (
                 <p>در حال بارگذاری مدارک...</p>
+               ) : !documents || documents.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">هنوز هیچ مدرکی بارگذاری نشده است.</p>
+                </div>
                ) : (
                 <Table>
                     <TableHeader>
@@ -247,7 +251,7 @@ export default function DocumentsPage() {
                   </Button>
                 </DialogClose>
                 <Button type="submit" disabled={isUploading}>
-                  {isUploading ? <><Upload className="ml-2 h-4 w-4 animate-spin"/> در حال بارگذاری...</> : <><Upload className="ml-2 h-4 w-4" /> ذخیره</>}
+                  {isUploading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin"/> در حال بارگذاری...</> : <><Upload className="ml-2 h-4 w-4" /> ذخیره</>}
                 </Button>
               </DialogFooter>
             </form>

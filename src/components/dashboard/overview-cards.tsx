@@ -1,9 +1,10 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Home, Users, FileText, UserCog } from 'lucide-react';
+import { Home, Users, ArrowUp, ArrowDown, Wallet, Briefcase } from 'lucide-react';
 import { useCollection, useFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useMemo } from 'react';
 
 export default function OverviewCards() {
   const { firestore } = useFirebase();
@@ -14,11 +15,20 @@ export default function OverviewCards() {
   const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
   const { data: personnel } = useCollection(personnelQuery);
   
-  const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
-  const { data: documents } = useCollection(documentsQuery);
+  const transactionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'financial_transactions') : null, [firestore]);
+  const { data: transactions } = useCollection(transactionsQuery);
 
-  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
-  const { data: stakeholders } = useCollection(stakeholdersQuery);
+  const { totalIncome, totalExpense, netProfit } = useMemo(() => {
+    if (!transactions) return { totalIncome: 0, totalExpense: 0, netProfit: 0 };
+    const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    return {
+        totalIncome: income,
+        totalExpense: expense,
+        netProfit: income - expense
+    };
+  }, [transactions]);
+
 
   const overviewData = [
     {
@@ -32,14 +42,14 @@ export default function OverviewCards() {
       icon: Users,
     },
     {
-      title: 'مدارک',
-      value: documents?.length.toLocaleString('fa-IR') ?? '۰',
-      icon: FileText,
+      title: 'کل درآمد',
+      value: totalIncome.toLocaleString('fa-IR'),
+      icon: ArrowUp,
     },
      {
-      title: 'ذی‌نفعان',
-      value: stakeholders?.length.toLocaleString('fa-IR') ?? '۰',
-      icon: UserCog,
+      title: 'کل هزینه',
+      value: totalExpense.toLocaleString('fa-IR'),
+      icon: ArrowDown,
     },
   ];
 
