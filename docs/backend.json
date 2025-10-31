@@ -1,0 +1,456 @@
+{
+  "entities": {
+    "Estate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Estate",
+      "type": "object",
+      "description": "Represents the overall estate information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the estate."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the estate."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the estate."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number for the estate management."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address for the estate management.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address"
+      ]
+    },
+    "Personnel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Personnel",
+      "type": "object",
+      "description": "Represents personnel working in the estate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the personnel."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the personnel."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the personnel."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number of the personnel."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the personnel."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the personnel.",
+          "format": "email"
+        },
+        "jobTitle": {
+          "type": "string",
+          "description": "Job title of the personnel."
+        },
+        "salary": {
+          "type": "number",
+          "description": "Salary of the personnel."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "jobTitle"
+      ]
+    },
+    "Stakeholder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Stakeholder",
+      "type": "object",
+      "description": "Represents individuals or legal entities having a stake in the estate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stakeholder."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of stakeholder (e.g., individual, company)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the stakeholder."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number of the stakeholder."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the stakeholder."
+        },
+        "financialInformation": {
+          "type": "string",
+          "description": "Financial information of the stakeholder"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name"
+      ]
+    },
+    "Villa": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Villa",
+      "type": "object",
+      "description": "Represents a villa in the estate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the villa."
+        },
+        "villaNumber": {
+          "type": "string",
+          "description": "Villa number or identifier."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the villa within the estate (e.g., coordinates)."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to Stakeholder. (Relationship: Stakeholder 1:N Villa)"
+        },
+        "size": {
+          "type": "number",
+          "description": "Size of the villa."
+        }
+      },
+      "required": [
+        "id",
+        "villaNumber"
+      ]
+    },
+    "FinancialTransaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FinancialTransaction",
+      "type": "object",
+      "description": "Represents a financial transaction (income or expense).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of transaction (income/expense)."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the transaction.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the transaction."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the transaction."
+        },
+        "stakeholderId": {
+          "type": "string",
+          "description": "Reference to Stakeholder. (Relationship: Stakeholder 1:N FinancialTransaction)"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "date",
+        "amount"
+      ]
+    },
+    "Payroll": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payroll",
+      "type": "object",
+      "description": "Represents payroll information for personnel.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payroll entry."
+        },
+        "personnelId": {
+          "type": "string",
+          "description": "Reference to Personnel. (Relationship: Personnel 1:N Payroll)"
+        },
+        "salary": {
+          "type": "number",
+          "description": "Salary amount."
+        },
+        "deductions": {
+          "type": "number",
+          "description": "Total deductions (taxes, insurance)."
+        },
+        "netPay": {
+          "type": "number",
+          "description": "Net pay amount."
+        },
+        "payDate": {
+          "type": "string",
+          "description": "Date of the payroll.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "personnelId",
+        "salary",
+        "deductions",
+        "netPay",
+        "payDate"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents attendance records for personnel.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the attendance record."
+        },
+        "personnelId": {
+          "type": "string",
+          "description": "Reference to Personnel. (Relationship: Personnel 1:N Attendance)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the attendance record.",
+          "format": "date-time"
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Check-in time."
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Check-out time."
+        },
+        "status": {
+          "type": "string",
+          "description": "Attendance status (Present, Absent, Late)."
+        }
+      },
+      "required": [
+        "id",
+        "personnelId",
+        "date"
+      ]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "Represents a document related to the company, stakeholders, or personnel.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the document."
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Type of entity the document is related to (e.g., Company, Stakeholder, Personnel)."
+        },
+        "entityId": {
+          "type": "string",
+          "description": "Identifier of the entity the document is related to."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Name of the document file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "Type of the document file (e.g., PDF, DOCX)."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date the document was uploaded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "entityType",
+        "entityId",
+        "fileName",
+        "fileType",
+        "uploadDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/estates/{estateId}",
+        "definition": {
+          "entityName": "Estate",
+          "schema": {
+            "$ref": "#/backend/entities/Estate"
+          },
+          "description": "Stores general estate information. Includes fields for name, address, and contact details.",
+          "params": [
+            {
+              "name": "estateId",
+              "description": "Unique identifier for the estate."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/personnel/{personnelId}",
+        "definition": {
+          "entityName": "Personnel",
+          "schema": {
+            "$ref": "#/backend/entities/Personnel"
+          },
+          "description": "Stores detailed personnel information, including contact details, personal information, job title, and salary.",
+          "params": [
+            {
+              "name": "personnelId",
+              "description": "Unique identifier for the personnel."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/personnel/{personnelId}/attendance/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Stores attendance records for each personnel member, including check-in/check-out times and status.",
+          "params": [
+            {
+              "name": "personnelId",
+              "description": "Unique identifier for the personnel."
+            },
+            {
+              "name": "attendanceId",
+              "description": "Unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stakeholders/{stakeholderId}",
+        "definition": {
+          "entityName": "Stakeholder",
+          "schema": {
+            "$ref": "#/backend/entities/Stakeholder"
+          },
+          "description": "Stores stakeholder information, including type, name, contact details, and financial information.",
+          "params": [
+            {
+              "name": "stakeholderId",
+              "description": "Unique identifier for the stakeholder."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/villas/{villaId}",
+        "definition": {
+          "entityName": "Villa",
+          "schema": {
+            "$ref": "#/backend/entities/Villa"
+          },
+          "description": "Stores villa information, including villa number, location, size, and ownerId. Includes denormalized 'ownerId' from Stakeholder for authorization independence.",
+          "params": [
+            {
+              "name": "villaId",
+              "description": "Unique identifier for the villa."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/financial_transactions/{transactionId}",
+        "definition": {
+          "entityName": "FinancialTransaction",
+          "schema": {
+            "$ref": "#/backend/entities/FinancialTransaction"
+          },
+          "description": "Stores financial transactions with relations to Stakeholders.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "Unique identifier for the transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/payrolls/{payrollId}",
+        "definition": {
+          "entityName": "Payroll",
+          "schema": {
+            "$ref": "#/backend/entities/Payroll"
+          },
+          "description": "Stores payroll information for personnel.",
+          "params": [
+            {
+              "name": "payrollId",
+              "description": "Unique identifier for the payroll entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores documents related to various entities.",
+          "params": [
+            {
+              "name": "documentId",
+              "description": "Unique identifier for the document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure is designed for the Sina Estate Manager application, a fully offline mobile app that manages estate data, personnel, homeowners, villas, and finances, all while adhering to Iranian localization preferences. The structure emphasizes Authorization Independence, DBAC (Database-Based Access Control), and easy debuggability.\n\n**Core Design Principles Applied:**\n\n1.  **Authorization Independence:** Denormalization is extensively used to ensure authorization checks do not rely on `get()` calls, thus enabling atomic operations and simplifying security rules. For example, the `villas` subcollection denormalizes `stakeholderId` (ownerId) from the `Stakeholder` document to enable direct ownership checks without needing to fetch the `Stakeholder` document.\n2.  **Clarity of Intent:** The structure is designed to make the authorization context clear and explicit, improving debuggability.\n3.  **DBAC (No Custom Claims):** Access control relies solely on `request.auth.uid` and data stored within the database.\n4.  **QAPs (Rules are not Filters):** Structural Segregation is used to ensure secure list operations. For instance, personnel data and stakeholder data are segregated into separate collections with distinct security rules.\n5.  **Invariants:** The structure supports the integrity of ownership, timestamps, and denormalized data, ensuring data consistency across the application.\n\n**Design Strategy Mandates Applied:**\n\n*   **A. Authorization Independence via Denormalization:**\n    *   The `villas` subcollection within each stakeholder document stores the `stakeholderId`, enabling direct ownership checks.\n*   **B. Structural Segregation (Homogeneous Security Posture):**\n    *   Data with different access needs are stored in separate collections. For example, `estates`, `personnel`, `stakeholders`, and `villas` are separate top-level collections. All attendance records are stored in the `attendance` subcollection of each `personnel` document.\n*   **C. Access Modeling (Standardization and Consistency):**\n    *   **Private Data:** Path-Based ownership is used for personnel-owned data (e.g., `/personnel/{personnelId}/attendance/{attendanceId}`).\n    *   **Hierarchical Paths for User-Owned Data:** The `villas` are located in a top-level collection for easier searching and management.\n    *   **Collaborative Data:** The application doesn't implement collaborative data.\n*   **D. Data Clarity and Predictability:**\n    *   **Explicit State Modeling:** Attendance records use a `status` field (e.g., 'Present', 'Absent', 'Late').\n    *   **Predictable Schema:** Consistent naming conventions are used across all collections and documents.\n\n**Explanation of Key Paths:**\n\n*   `/estates/{estateId}`: Stores general estate information, such as name, address, and contact details.\n*   `/personnel/{personnelId}`: Stores detailed personnel information, including personal details, contact information, financial data, and documents. Subcollections such as `attendance` store related information.\n*   `/personnel/{personnelId}/attendance/{attendanceId}`: Stores attendance records for each personnel member, including check-in/check-out times and status.\n*   `/stakeholders/{stakeholderId}`: Stores stakeholder information, including type, name, contact details, and financial information.\n*   `/villas/{villaId}`: Stores villa information, including villa number, location, size, and ownerId. The `ownerId` is denormalized from the Stakeholder document to ensure Authorization Independence.\n*   `/financial_transactions/{transactionId}`: Stores financial transactions with relations to Stakeholders.\n*   `/payrolls/{payrollId}`: Stores payroll information for personnel.\n*   `/documents/{documentId}`: Stores documents related to various entities.\n\n**Localization**: The application is designed with Iranian preferences in mind, using a fully Persian calendar and adhering to local financial standards. The UI uses a color palette reflecting Iranian heritage and warmth, with typography suitable for readability in a localized context.\n\n**Offline Capability**: The database is designed to be stored locally within the mobile application, enabling full offline functionality. Data import and export capabilities facilitate the transfer of data between devices."
+  }
+}
