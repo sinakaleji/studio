@@ -8,7 +8,7 @@ const InputGroup = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("relative flex flex-wrap items-stretch w-full", className)}
+    className={cn("input-group relative flex flex-wrap items-stretch w-full", className)}
     {...props}
   />
 ))

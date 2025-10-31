@@ -43,7 +43,7 @@ type PayrollSettings = { insuranceRate: number; taxBrackets: { from: number; to:
 type Payroll = {
     id: string;
     personnelId: string;
-    personnelName: string;
+    personnelName?: string; // Optional because it's added later
     payDate: Timestamp;
     month: string;
     baseSalary: number;
@@ -160,19 +160,19 @@ export default function PayrollPage() {
     const insuranceDeduction = totalEarnings * (payrollSettings.insuranceRate / 100);
     
     let taxDeduction = 0;
-    let annualTaxableIncome = totalEarnings * 12;
+    const annualTaxableIncome = totalEarnings * 12;
     let annualTax = 0;
 
     payrollSettings.taxBrackets.forEach(bracket => {
         if (annualTaxableIncome > bracket.from) {
-            const incomeInBracket = Math.min(annualTaxableIncome, bracket.to || Infinity) - bracket.from;
+            const incomeInBracket = Math.min(annualTaxableIncome, bracket.to === Infinity ? annualTaxableIncome : bracket.to) - bracket.from;
             if (incomeInBracket > 0) {
                 annualTax += incomeInBracket * (bracket.rate / 100);
             }
         }
     });
 
-    taxDeduction = annualTax / 12;
+    taxDeduction = annualTax > 0 ? annualTax / 12 : 0;
     
     const totalDeductions = insuranceDeduction + taxDeduction;
     const netPay = totalEarnings - totalDeductions;
@@ -181,7 +181,7 @@ export default function PayrollPage() {
     const payrollData: Omit<Payroll, 'id' | 'payDate' | 'personnelName'> = {
       personnelId: data.personnelId,
       month: data.month,
-      baseSalary: data.baseSalary,
+      baseSalary: parseFloat(data.baseSalary.toFixed(0)),
       overtimeHours: parseFloat(overtimeHours.toFixed(2)),
       overtimePay: parseFloat(overtimePay.toFixed(0)),
       totalEarnings: parseFloat(totalEarnings.toFixed(0)),

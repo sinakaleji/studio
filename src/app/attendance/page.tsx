@@ -64,7 +64,7 @@ export default function AttendancePage() {
 
   const handleAttendanceChange = async (
     personnelId: string,
-    field: keyof Omit<Attendance, 'id'>,
+    field: keyof Omit<Attendance, 'id' | 'date' | 'personnelId'>,
     value: string | boolean | AttendanceStatus
   ) => {
     if (!firestore) return;
@@ -72,7 +72,7 @@ export default function AttendancePage() {
     const id = `${formattedDate}_${personnelId}`;
     const docRef = doc(firestore, 'attendances', id);
   
-    const existingRecord = dailyAttendanceMap.get(personnelId);
+    const existingRecord = dailyAttendanceMap.get(personnelId) || {};
   
     const updatedData: Partial<Omit<Attendance, 'id'>> = {
       date: formattedDate,
@@ -86,7 +86,7 @@ export default function AttendancePage() {
     };
   
     // Default to present if changing time, unless it's explicitly set to absent
-    if ((field === 'entryTime' || field === 'exitTime') && updatedData.status !== 'absent') {
+    if ((field === 'entryTime' || field === 'exitTime') && value && updatedData.status !== 'absent') {
       updatedData.status = 'present';
     }
 
@@ -205,14 +205,12 @@ export default function AttendancePage() {
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        {currentStatus === 'present' && attendance?.isLate && (
-                                            <span className="flex items-center text-destructive font-medium">
-                                                تاخیر
-                                            </span>
-                                        )}
-                                        {currentStatus === 'present' && !attendance?.isLate && attendance?.entryTime && (
-                                             <span className="flex items-center text-green-600 font-medium">
-                                                به موقع
+                                        {currentStatus === 'present' && attendance?.entryTime && (
+                                            <span className={cn(
+                                                "font-medium",
+                                                attendance?.isLate ? "text-destructive" : "text-green-600"
+                                            )}>
+                                                {attendance?.isLate ? 'تاخیر' : 'به موقع'}
                                             </span>
                                         )}
                                          {currentStatus !== 'present' && (

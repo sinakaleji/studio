@@ -21,7 +21,7 @@ import { useReactToPrint } from 'react-to-print';
 type Payroll = {
     id: string;
     personnelId: string;
-    personnelName: string;
+    personnelName?: string;
     payDate: any;
     month: string;
     baseSalary: number;
@@ -90,7 +90,7 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border p-4">
                     <h4 className="col-span-2 text-base font-semibold text-green-600 mb-2">درآمدها</h4>
                     <PayslipRow label="حقوق پایه" value={payslip.baseSalary} />
-                    <PayslipRow label="اضافه کاری" value={payslip.overtimeHours.toLocaleString('fa-IR')} currency="ساعت" />
+                    <PayslipRow label="ساعات اضافه کاری" value={payslip.overtimeHours.toLocaleString('fa-IR')} currency="ساعت" />
                     <PayslipRow label="مبلغ اضافه کاری" value={payslip.overtimePay} />
                     <Separator className="col-span-2 my-2" />
                     <PayslipRow label="جمع درآمد ناخالص" value={payslip.totalEarnings} isBold />
@@ -109,7 +109,7 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
                 </div>
             </div>
         </div>
-        <DialogFooter className='no-print'>
+        <DialogFooter className='no-print flex-row justify-end'>
             <Button type="button" variant="outline" onClick={handlePrint}>
                 <Printer className="ml-2 h-4 w-4" />
                 چاپ / ذخیره PDF
