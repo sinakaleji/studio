@@ -25,21 +25,20 @@ export default function OverviewCards() {
   
   const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
   const { data: documents } = useCollection(documentsQuery);
-
-  const oneMonthAgoTimestamp = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    return Timestamp.fromDate(getStartOfDay(date));
-  }, []);
-
+  
   const monthlyIncomeQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const oneMonthAgoTimestamp = Timestamp.fromDate(getStartOfDay(oneMonthAgo));
+    
     return query(
         collection(firestore, 'financial_transactions'),
         where('type', '==', 'income'),
         where('date', '>=', oneMonthAgoTimestamp)
     );
-  }, [firestore, oneMonthAgoTimestamp]);
+  }, [firestore]);
+
   const { data: monthlyIncome } = useCollection(monthlyIncomeQuery);
 
   const totalIncome = monthlyIncome?.reduce((acc, tx) => acc + tx.amount, 0) || 0;

@@ -23,21 +23,19 @@ function getStartOfDay(date: Date): Date {
 
 export default function FinancialChart() {
     const { firestore } = useFirebase();
-
-    const oneMonthAgoTimestamp = useMemo(() => {
-        const date = new Date();
-        date.setMonth(date.getMonth() - 1);
-        return Timestamp.fromDate(getStartOfDay(date));
-    }, []);
-
+    
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const oneMonthAgoTimestamp = Timestamp.fromDate(getStartOfDay(oneMonthAgo));
+
         return query(
             collection(firestore, 'financial_transactions'),
             where('date', '>=', oneMonthAgoTimestamp),
             orderBy('date', 'asc')
         );
-    }, [firestore, oneMonthAgoTimestamp]);
+    }, [firestore]);
 
     const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
