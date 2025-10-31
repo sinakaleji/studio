@@ -14,19 +14,30 @@ type Transaction = {
     date: Timestamp;
 };
 
+// Function to get the start of the day for a given date
+function getStartOfDay(date: Date): Date {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    return start;
+}
+
 export default function FinancialChart() {
     const { firestore } = useFirebase();
 
+    const oneMonthAgoTimestamp = useMemo(() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - 1);
+        return Timestamp.fromDate(getStartOfDay(date));
+    }, []);
+
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         return query(
             collection(firestore, 'financial_transactions'),
-            where('date', '>=', Timestamp.fromDate(oneMonthAgo)),
+            where('date', '>=', oneMonthAgoTimestamp),
             orderBy('date', 'asc')
         );
-    }, [firestore]);
+    }, [firestore, oneMonthAgoTimestamp]);
 
     const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
@@ -36,10 +47,12 @@ export default function FinancialChart() {
         const aggregatedData: { [key: string]: { name: string, income: number, expense: number } } = {};
 
         transactions.forEach(tx => {
+            if (!tx.date) return;
             const date = tx.date.toDate();
-            // Use a stable format for grouping that doesn't depend on client/server time rendering differences
-            const dayKey = format(date, 'yyyy-MM-dd'); 
-            const dayLabel = format(date, 'MMM d', { locale: { code: 'fa' } });
+            const dayKey = format(date, 'yyyy-MM-dd');
+            // Use a locale that is stable on the server and client, like 'en' for formatting structure
+            const dayLabel = format(date, 'MMM d');
+
 
             if (!aggregatedData[dayKey]) {
                 aggregatedData[dayKey] = { name: dayLabel, income: 0, expense: 0 };
@@ -51,7 +64,7 @@ export default function FinancialChart() {
                 aggregatedData[dayKey].expense += tx.amount;
             }
         });
-
+        
         return Object.values(aggregatedData);
     }, [transactions]);
 

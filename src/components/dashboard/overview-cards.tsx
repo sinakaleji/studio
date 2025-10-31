@@ -4,6 +4,15 @@ import { Home, Users, Wallet, FileText } from 'lucide-react';
 import { useCollection, useFirebase } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useMemo } from 'react';
+
+// Function to get the start of the day for a given date
+function getStartOfDay(date: Date): Date {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    return start;
+}
+
 
 export default function OverviewCards() {
   const { firestore } = useFirebase();
@@ -17,16 +26,20 @@ export default function OverviewCards() {
   const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
   const { data: documents } = useCollection(documentsQuery);
 
+  const oneMonthAgoTimestamp = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return Timestamp.fromDate(getStartOfDay(date));
+  }, []);
+
   const monthlyIncomeQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     return query(
         collection(firestore, 'financial_transactions'),
         where('type', '==', 'income'),
-        where('date', '>=', Timestamp.fromDate(oneMonthAgo))
+        where('date', '>=', oneMonthAgoTimestamp)
     );
-  }, [firestore]);
+  }, [firestore, oneMonthAgoTimestamp]);
   const { data: monthlyIncome } = useCollection(monthlyIncomeQuery);
 
   const totalIncome = monthlyIncome?.reduce((acc, tx) => acc + tx.amount, 0) || 0;
