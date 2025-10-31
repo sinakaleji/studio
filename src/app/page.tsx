@@ -3,9 +3,7 @@ import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import OverviewCards from '@/components/dashboard/overview-cards';
 import EstateMap from '@/components/dashboard/estate-map';
-import RecentActivity from '@/components/dashboard/recent-activity';
 import CalendarWidget from '@/components/dashboard/calendar-widget';
-import FinancialChart from '@/components/dashboard/financial-chart';
 
 export default function DashboardPage() {
   return (
@@ -21,8 +19,7 @@ export default function DashboardPage() {
           </div>
           <div className="col-span-1 lg:col-span-3">
              <div className="grid gap-4">
-                <FinancialChart />
-                <RecentActivity />
+                <CalendarWidget />
              </div>
           </div>
         </div>
