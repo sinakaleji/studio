@@ -48,7 +48,7 @@ export default function AppSidebar() {
   return (
     <Sidebar side="right" collapsible="icon" variant="sidebar">
       <SidebarHeader>
-        <div className="flex w-full items-center gap-2 p-2 text-lg font-semibold font-headline text-sidebar-foreground">
+        <div className="flex w-full items-center gap-2 p-2 text-lg font-semibold text-sidebar-foreground">
           <Building2 className="size-6 shrink-0 text-primary" />
           <span className="truncate group-data-[collapsible=icon]:hidden">Sina Manager</span>
         </div>

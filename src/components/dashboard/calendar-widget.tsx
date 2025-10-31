@@ -1,17 +1,12 @@
 'use client';
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { toPersian } from 'react-day-picker/paltry/jalali';
+import { format } from 'date-fns-jalali';
 
 export default function CalendarWidget() {
-  const [time, setTime] = React.useState<string>('');
-
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date().toLocaleTimeString('fa-IR'));
-    }, 1000);
-    setTime(new Date().toLocaleTimeString('fa-IR'));
-    return () => clearInterval(timer);
-  }, []);
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
 
   const today = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -19,21 +14,24 @@ export default function CalendarWidget() {
 
 
   return (
-    <Card>
-      <CardContent className="p-2 md:p-4">
-        <div className="flex flex-col items-center justify-center gap-4 h-full">
-          <div className="text-center">
-             <p className="text-4xl font-bold font-mono tracking-widest text-primary">{time}</p>
-             <p className="text-sm text-muted-foreground">{todayString}</p>
-          </div>
-          <div className="flex-grow flex items-center justify-center">
-            <p className="text-muted-foreground text-center">
-              در حال حاضر ویجت تقویم به دلیل مشکل فنی غیرفعال است.
-              <br />
-              به زودی آن را با یک تقویم بهتر جایگزین خواهیم کرد.
-            </p>
-          </div>
-        </div>
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium">{todayString}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-grow flex items-center justify-center">
+        <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="rounded-md"
+            locale={toPersian}
+            dir="rtl"
+            footer={
+                <p className="text-center text-sm pt-2 text-muted-foreground">
+                    امروز: {format(new Date(), 'PPP', { locale: toPersian })}
+                </p>
+            }
+        />
       </CardContent>
     </Card>
   );
