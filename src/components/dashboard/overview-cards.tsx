@@ -1,10 +1,9 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Home, Users, Wallet, FileText, UserCog } from 'lucide-react';
+import { Home, Users, FileText, UserCog } from 'lucide-react';
 import { useCollection, useFirebase } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { useMemo } from 'react';
 
 export default function OverviewCards() {
   const { firestore } = useFirebase();
@@ -53,7 +52,7 @@ export default function OverviewCards() {
             <card.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{card.value}</div>
+            <div className="text-2xl font-bold">{card.value}</div>
           </CardContent>
         </Card>
       ))}

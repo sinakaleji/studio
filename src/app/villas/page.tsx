@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -66,12 +66,12 @@ export default function VillasPage() {
   const { data: villas, isLoading: isLoadingVillas } = useCollection<Villa>(villasQuery);
   const { data: stakeholders, isLoading: isLoadingStakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
 
-  const stakeholderMap = useMemoFirebase(() => {
+  const stakeholderMap = useMemo(() => {
     if (!stakeholders) return new Map();
     return new Map(stakeholders.map(s => [s.id, s.name]));
   }, [stakeholders]);
 
-  const villasWithOwners = useMemoFirebase(() => {
+  const villasWithOwners = useMemo(() => {
     return villas?.map(v => ({
       ...v,
       ownerName: stakeholderMap.get(v.ownerId) || 'نامشخص'
@@ -240,7 +240,7 @@ export default function VillasPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>مالک</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="مالک ویلا را انتخاب کنید" />
