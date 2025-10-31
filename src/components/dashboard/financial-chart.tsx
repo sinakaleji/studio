@@ -73,6 +73,7 @@ export default function FinancialChart() {
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
+                                reversed={true}
                             />
                             <YAxis
                                 stroke="#888888"
@@ -80,6 +81,7 @@ export default function FinancialChart() {
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(value) => `${(value as number) / 1000000}م`}
+                                orientation="right"
                             />
                             <Tooltip
                                 cursor={{ fill: 'hsl(var(--muted))' }}
