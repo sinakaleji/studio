@@ -1,29 +1,84 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { overviewCards } from "@/lib/data";
-import { cn } from "@/lib/utils";
+'use client';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Home, Users, Wallet, FileText } from 'lucide-react';
+import { useCollection, useFirebase } from '@/firebase';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 
 export default function OverviewCards() {
-    return (
-        <>
-        {overviewCards.map((card) => (
-            <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                <card.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold font-headline">{card.value}</div>
-                <p 
-                className={cn(
-                    "text-xs text-muted-foreground",
-                    card.changeType === "increase" ? "text-green-600" : "text-red-600"
-                )}
-                >
-                {card.change} از ماه گذشته
-                </p>
-            </CardContent>
-            </Card>
-        ))}
-        </>
+  const { firestore } = useFirebase();
+
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
+  const { data: villas } = useCollection(villasQuery);
+
+  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
+  const { data: personnel } = useCollection(personnelQuery);
+  
+  const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
+  const { data: documents } = useCollection(documentsQuery);
+
+  const monthlyIncomeQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return query(
+        collection(firestore, 'financial_transactions'),
+        where('type', '==', 'income'),
+        where('date', '>=', Timestamp.fromDate(oneMonthAgo))
     );
+  }, [firestore]);
+  const { data: monthlyIncome } = useCollection(monthlyIncomeQuery);
+
+  const totalIncome = monthlyIncome?.reduce((acc, tx) => acc + tx.amount, 0) || 0;
+
+  const overviewData = [
+    {
+      title: 'تعداد ویلاها',
+      value: villas?.length.toLocaleString('fa-IR') ?? '۰',
+      icon: Home,
+      change: '',
+      changeType: 'increase',
+    },
+    {
+      title: 'پرسنل',
+      value: personnel?.length.toLocaleString('fa-IR') ?? '۰',
+      icon: Users,
+      change: '',
+      changeType: 'increase',
+    },
+    {
+      title: 'درآمد ماهانه',
+      value: `${totalIncome.toLocaleString('fa-IR')} تومان`,
+      icon: Wallet,
+      change: '',
+      changeType: 'increase',
+    },
+    {
+      title: 'مدارک',
+      value: documents?.length.toLocaleString('fa-IR') ?? '۰',
+      icon: FileText,
+      change: '',
+      changeType: 'increase',
+    },
+  ];
+
+
+  return (
+    <>
+      {overviewData.map((card) => (
+        <Card key={card.title}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            <card.icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{card.value}</div>
+            {card.change && (
+                <p className="text-xs text-muted-foreground">{card.change}</p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  );
 }

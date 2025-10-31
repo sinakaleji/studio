@@ -10,11 +10,13 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings } from 'lucide-react';
+import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { user } from '@/lib/data';
 import { Button } from './ui/button';
+import { useUser, useFirebase } from '@/firebase';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useEffect } from 'react';
 
 const menuItems = [
   { href: '/', label: 'داشبورد', icon: LayoutGrid },
@@ -26,6 +28,20 @@ const menuItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!user && !isUserLoading && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  const handleSignOut = () => {
+    if (auth) {
+        auth.signOut();
+    }
+  }
 
   return (
     <Sidebar side="right" collapsible="icon" variant="sidebar">
@@ -60,28 +76,44 @@ export default function AppSidebar() {
             <DropdownMenuTrigger asChild>
                  <Button variant="ghost" className="h-14 w-full justify-start gap-2 p-2 hover:bg-sidebar-accent">
                     <Avatar className="size-8">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      {isUserLoading ? (
+                          <Loader className="animate-spin" />
+                      ) : user ? (
+                          <>
+                            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
+                            <AvatarFallback>{user.isAnonymous ? 'AN' : (user.displayName || user.email || 'U').charAt(0)}</AvatarFallback>
+                          </>
+                      ) : (
+                          <AvatarFallback>?</AvatarFallback>
+                      )}
                     </Avatar>
                     <div className="flex flex-col items-start truncate group-data-[collapsible=icon]:hidden">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      {isUserLoading ? (
+                          <span className='text-xs'>در حال بارگذاری...</span>
+                      ) : user ? (
+                          <>
+                            <span className="font-medium">{user.isAnonymous ? 'کاربر مهمان' : (user.displayName || 'کاربر')}</span>
+                            <span className="text-xs text-muted-foreground">{user.isAnonymous ? '' : user.email}</span>
+                          </>
+                      ): (
+                          <span className="font-medium">وارد نشده</span>
+                      )}
                     </div>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="start" className="w-56" sideOffset={10}>
                 <DropdownMenuLabel>حساب کاربری</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled>
                     <UserCircle className="ml-2 h-4 w-4" />
                     <span>پروفایل</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled>
                     <Settings className="ml-2 h-4 w-4" />
                     <span>تنظیمات</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut} disabled={!user}>
                     <LogOut className="ml-2 h-4 w-4" />
                     <span>خروج</span>
                 </DropdownMenuItem>

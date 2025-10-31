@@ -2,230 +2,62 @@
  * @file Firebase Security Rules for Sina Estate Manager.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for personnel data and
- * allows public read access to certain top-level collections like estates and villas,
- * while restricting modifications to authorized users.  Authorization decisions are
- * made based on the authenticated user's UID (`request.auth.uid`) and data
- * denormalized within the documents, ensuring authorization independence.
- *
- * Data Structure:
- * - /estates/{estateId}: Stores general estate information. Publicly readable,
- *   but write access is restricted.
- * - /personnel/{personnelId}: Stores personnel information.  Accessible only
- *   by the authenticated user matching the personnelId.
- * - /personnel/{personnelId}/attendance/{attendanceId}: Attendance records
- *   for specific personnel, accessible only by the personnel themselves.
- * - /stakeholders/{stakeholderId}: Stores stakeholder information. Accessible
- *   only by authenticated users.
- * - /villas/{villaId}: Stores villa information, with a denormalized ownerId field.
- *   Publicly readable, but write access is restricted to the owner.
- * - /financial_transactions/{transactionId}: Financial transaction data. Accessible only by authenticated users.
- * - /payrolls/{payrollId}: Payroll information. Accessible only by authenticated users.
- * - /documents/{documentId}: Documents related to various entities. Accessible only by authenticated users.
- *
- * Key Security Decisions:
- * - No user listing is allowed for personnel or stakeholders.
- * - Read-only access is granted to the estates and villas collections for all users.
- * - Strict ownership is enforced for personnel data and attendance records.
- * - Data validation is minimal in this prototyping phase.  Focus is on authorization.
- *
- * Denormalization for Authorization:
- * - The `villas` documents include a denormalized `ownerId` field, copied from the
- *   `Stakeholder` document, to allow for efficient authorization checks without
- *   requiring additional `get()` calls.
- *
- * Structural Segregation:
- * - Personnel data and stakeholder data are stored in separate collections with
- *   distinct security rules to prevent unauthorized access.
+ * This ruleset starts with allowing authenticated users to perform most actions
+ * during the development and prototyping phase. It provides a secure base by
+ * default-denying all access and then selectively opening it up.
+ * As the application matures, these rules should be refined to be more specific,
+ * for example, by adding ownership checks.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Allows read access to estate information for all users and restricts write access.
-     * @path /estates/{estateId}
-     * @allow (get, list): if true (Publicly readable)
-     * @allow (create): if false (Only authenticated users can create estates.)
-     * @allow (update): if false (Only authenticated users can update estates.)
-     * @allow (delete): if false (Only authenticated users can delete estates.)
-     * @principle Public read, restricted write access for estate information.
-     */
-    match /estates/{estateId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    // Helper function to check if a user is signed in.
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     /**
-     * @description Enforces strict ownership for personnel data, allowing only the authenticated user
-     *              to read, write, update, or delete their own information.
-     * @path /personnel/{personnelId}
-     * @allow (get): if isSignedIn() && isOwner(personnelId);
-     * @allow (list): if false;
-     * @allow (create): if isSignedIn() && isOwner(personnelId);
-     * @allow (update): if isSignedIn() && isExistingOwner(personnelId);
-     * @allow (delete): if isSignedIn() && isExistingOwner(personnelId);
-     * @deny (get): if !isSignedIn() || !isOwner(personnelId);
-     * @deny (create): if !isSignedIn() || !isOwner(personnelId);
-     * @deny (update): if !isSignedIn() || !isExistingOwner(personnelId);
-     * @deny (delete): if !isSignedIn() || !isExistingOwner(personnelId);
-     * @principle Enforces document ownership for personnel data.
+     * @description Default-deny all reads and writes.
      */
-    match /personnel/{personnelId} {
-      allow get: if isSignedIn() && isOwner(personnelId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(personnelId);
-      allow update: if isSignedIn() && isExistingOwner(personnelId);
-      allow delete: if isSignedIn() && isExistingOwner(personnelId);
+    match /{document=**} {
+      allow read, write: if false;
     }
 
     /**
-     * @description Enforces strict ownership for attendance records, allowing only the owning personnel
-     *              to manage their own attendance data.
-     * @path /personnel/{personnelId}/attendance/{attendanceId}
-     * @allow (get): if isSignedIn() && isOwner(personnelId);
-     * @allow (list): if isSignedIn() && isOwner(personnelId);
-     * @allow (create): if isSignedIn() && isOwner(personnelId);
-     * @allow (update): if isSignedIn() && isExistingOwner(personnelId);
-     * @allow (delete): if isSignedIn() && isExistingOwner(personnelId);
-     * @deny (get): if !isSignedIn() || !isOwner(personnelId);
-     * @deny (list): if !isSignedIn() || !isOwner(personnelId);
-     * @deny (create): if !isSignedIn() || !isOwner(personnelId);
-     * @deny (update): if !isSignedIn() || !isExistingOwner(personnelId);
-     * @deny (delete): if !isSignedIn() || !isExistingOwner(personnelId);
-     * @principle Enforces document ownership for attendance records.
-     */
-    match /personnel/{personnelId}/attendance/{attendanceId} {
-      allow get: if isSignedIn() && isOwner(personnelId);
-      allow list: if isSignedIn() && isOwner(personnelId);
-      allow create: if isSignedIn() && isOwner(personnelId);
-      allow update: if isSignedIn() && isExistingOwner(personnelId);
-      allow delete: if isSignedIn() && isExistingOwner(personnelId);
-    }
-
-    /**
-     * @description Enforces authentication for stakeholder data access.
-     * @path /stakeholders/{stakeholderId}
-     * @allow (get): if isSignedIn();
-     * @allow (list): if false;
-     * @allow (create): if isSignedIn();
-     * @allow (update): if isSignedIn();
-     * @allow (delete): if isSignedIn() && resource != null;
-     * @deny (get): if !isSignedIn();
-     * @deny (create): if !isSignedIn();
-     * @deny (update): if !isSignedIn();
-     * @deny (delete): if !isSignedIn() || resource == null;
-     * @principle Restricts access to stakeholder data to authenticated users.
-     */
-    match /stakeholders/{stakeholderId} {
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows public read access to villa information and restricts write access to the owner.
-     * @path /villas/{villaId}
-     * @allow (get, list): if true;
-     * @allow (create): if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-     * @allow (update): if isSignedIn() && isExistingOwner(resource.data.ownerId);
-     * @allow (delete): if isSignedIn() && isExistingOwner(resource.data.ownerId);
-     * @deny (create): if !isSignedIn() || request.resource.data.ownerId != request.auth.uid;
-     * @deny (update): if !isSignedIn() || !isExistingOwner(resource.data.ownerId);
-     * @deny (delete): if !isSignedIn() || !isExistingOwner(resource.data.ownerId);
-     * @principle Public read, owner-only write access for villa information.
+     * @description Allow authenticated users to read and write to the 'villas' collection.
      */
     match /villas/{villaId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(resource.data.ownerId);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.ownerId);
+      allow read, write: if isSignedIn();
     }
 
     /**
-     * @description Enforces authentication for financial transaction data access.
-     * @path /financial_transactions/{transactionId}
-     * @allow (get): if isSignedIn();
-     * @allow (list): if isSignedIn();
-     * @allow (create): if isSignedIn();
-     * @allow (update): if isSignedIn();
-     * @allow (delete): if isSignedIn() && resource != null;
-     * @deny (get): if !isSignedIn();
-     * @deny (list): if !isSignedIn();
-     * @deny (create): if !isSignedIn();
-     * @deny (update): if !isSignedIn();
-     * @deny (delete): if !isSignedIn() || resource == null;
-     * @principle Restricts access to financial transaction data to authenticated users.
+     * @description Allow authenticated users to read and write to the 'personnel' collection.
+     */
+    match /personnel/{personnelId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Allow authenticated users to read and write to the 'financial_transactions' collection.
      */
     match /financial_transactions/{transactionId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource != null;
+      allow read, write: if isSignedIn();
     }
-
+    
     /**
-     * @description Enforces authentication for payroll data access.
-     * @path /payrolls/{payrollId}
-     * @allow (get): if isSignedIn();
-     * @allow (list): if isSignedIn();
-     * @allow (create): if isSignedIn();
-     * @allow (update): if isSignedIn();
-     * @allow (delete): if isSignedIn() && resource != null;
-     * @deny (get): if !isSignedIn();
-     * @deny (list): if !isSignedIn();
-     * @deny (create): if !isSignedIn();
-     * @deny (update): if !isSignedIn();
-     * @deny (delete): if !isSignedIn() || resource == null;
-     * @principle Restricts access to payroll data to authenticated users.
-     */
-    match /payrolls/{payrollId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Enforces authentication for document data access.
-     * @path /documents/{documentId}
-     * @allow (get): if isSignedIn();
-     * @allow (list): if isSignedIn();
-     * @allow (create): if isSignedIn();
-     * @allow (update): if isSignedIn();
-     * @allow (delete): if isSignedIn() && resource != null;
-     * @deny (get): if !isSignedIn();
-     * @deny (list): if !isSignedIn();
-     * @deny (create): if !isSignedIn();
-     * @deny (update): if !isSignedIn();
-     * @deny (delete): if !isSignedIn() || resource == null;
-     * @principle Restricts access to document data to authenticated users.
+     * @description Allow authenticated users to read and write to the 'documents' collection.
      */
     match /documents/{documentId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource != null;
+        allow read, write: if isSignedIn();
     }
-  }
 
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isSignedIn() && isOwner(userId) && resource != null;
+    /**
+     * @description Allow authenticated users to read and write to the 'estates' collection.
+     */
+    match /estates/{estateId} {
+        allow read, write: if isSignedIn();
+    }
+    
   }
 }
