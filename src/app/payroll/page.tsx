@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,8 +20,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -61,12 +61,12 @@ export default function PayrollPage() {
   const payrollsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'payrolls') : null, [firestore]);
   const { data: payrolls, isLoading: isLoadingPayrolls } = useCollection<Payroll>(payrollsQuery);
 
-  const personnelMap = useMemoFirebase(() => {
+  const personnelMap = useMemo(() => {
     if (!personnel) return new Map();
     return new Map(personnel.map(p => [p.id, `${p.firstName} ${p.lastName}`]));
   }, [personnel]);
   
-  const payrollsWithNames = useMemoFirebase(() => {
+  const payrollsWithNames = useMemo(() => {
       return payrolls?.map(p => ({
           ...p,
           personnelName: personnelMap.get(p.personnelId) || 'نامشخص'
