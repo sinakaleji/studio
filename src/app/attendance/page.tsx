@@ -10,9 +10,9 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { faIR } from 'date-fns/locale';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Check, X, MoreHorizontal } from 'lucide-react';
+import { Calendar as CalendarIcon, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -64,7 +64,7 @@ export default function AttendancePage() {
 
   const handleAttendanceChange = async (
     personnelId: string,
-    field: keyof Attendance,
+    field: keyof Omit<Attendance, 'id'>,
     value: string | boolean | AttendanceStatus
   ) => {
     if (!firestore) return;
@@ -74,15 +74,14 @@ export default function AttendancePage() {
   
     const existingRecord = dailyAttendanceMap.get(personnelId);
   
-    let newStatus: AttendanceStatus | undefined = undefined;
-    if (field === 'status') {
-      newStatus = value as AttendanceStatus;
-    }
-  
-    const updatedData: Partial<Attendance> = {
+    const updatedData: Partial<Omit<Attendance, 'id'>> = {
       date: formattedDate,
       personnelId,
-      ...(existingRecord || {}),
+      status: existingRecord?.status || 'absent',
+      entryTime: existingRecord?.entryTime || '',
+      exitTime: existingRecord?.exitTime || '',
+      isLate: existingRecord?.isLate || false,
+      ...existingRecord,
       [field]: value,
     };
   
@@ -92,7 +91,7 @@ export default function AttendancePage() {
     }
 
     // if status is changed to absent, clear time fields
-    if (newStatus === 'absent') {
+    if (field === 'status' && value === 'absent') {
         updatedData.entryTime = '';
         updatedData.exitTime = '';
         updatedData.isLate = false;
@@ -164,6 +163,7 @@ export default function AttendancePage() {
                     <TableBody>
                         {personnelList?.map((p) => {
                             const attendance = dailyAttendanceMap.get(p.id);
+                            const currentStatus = attendance?.status || 'absent';
                             return (
                                 <TableRow key={p.id}>
                                     <TableCell className="font-medium flex items-center gap-2">
@@ -174,7 +174,7 @@ export default function AttendancePage() {
                                     </TableCell>
                                     <TableCell>
                                         <Select
-                                            value={attendance?.status || 'absent'}
+                                            value={currentStatus}
                                             onValueChange={(value: AttendanceStatus) => handleAttendanceChange(p.id, 'status', value)}
                                         >
                                             <SelectTrigger className="w-[110px]">
@@ -192,7 +192,7 @@ export default function AttendancePage() {
                                             className="w-[120px]"
                                             value={attendance?.entryTime || ''}
                                             onChange={(e) => handleAttendanceChange(p.id, 'entryTime', e.target.value)}
-                                            disabled={attendance?.status === 'absent'}
+                                            disabled={currentStatus === 'absent'}
                                         />
                                     </TableCell>
                                     <TableCell>
@@ -201,23 +201,21 @@ export default function AttendancePage() {
                                             className="w-[120px]"
                                             value={attendance?.exitTime || ''}
                                             onChange={(e) => handleAttendanceChange(p.id, 'exitTime', e.target.value)}
-                                            disabled={attendance?.status === 'absent'}
+                                            disabled={currentStatus === 'absent'}
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        {attendance?.status === 'present' && attendance.isLate && (
-                                            <span className="flex items-center text-destructive">
-                                                <Check className="h-4 w-4 ml-1" />
+                                        {currentStatus === 'present' && attendance?.isLate && (
+                                            <span className="flex items-center text-destructive font-medium">
                                                 تاخیر
                                             </span>
                                         )}
-                                        {attendance?.status === 'present' && !attendance.isLate && attendance.entryTime && (
-                                             <span className="flex items-center text-green-600">
-                                                <Check className="h-4 w-4 ml-1" />
+                                        {currentStatus === 'present' && !attendance?.isLate && attendance?.entryTime && (
+                                             <span className="flex items-center text-green-600 font-medium">
                                                 به موقع
                                             </span>
                                         )}
-                                         {attendance?.status !== 'present' && (
+                                         {currentStatus !== 'present' && (
                                              <span>-</span>
                                         )}
                                     </TableCell>
