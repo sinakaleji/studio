@@ -26,18 +26,21 @@ export default function OverviewCards() {
   const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
   const { data: documents } = useCollection(documentsQuery);
   
-  const monthlyIncomeQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+  const oneMonthAgoTimestamp = useMemo(() => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const oneMonthAgoTimestamp = Timestamp.fromDate(getStartOfDay(oneMonthAgo));
+    return Timestamp.fromDate(getStartOfDay(oneMonthAgo));
+  }, []);
+
+  const monthlyIncomeQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     
     return query(
         collection(firestore, 'financial_transactions'),
         where('type', '==', 'income'),
         where('date', '>=', oneMonthAgoTimestamp)
     );
-  }, [firestore]);
+  }, [firestore, oneMonthAgoTimestamp]);
 
   const { data: monthlyIncome } = useCollection(monthlyIncomeQuery);
 
