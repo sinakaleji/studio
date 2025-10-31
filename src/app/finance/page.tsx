@@ -21,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,10 @@ const transactionSchema = z.object({
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
+type Transaction = TransactionFormData & {
+  id: string;
+  date: Timestamp;
+};
 
 export default function FinancePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,7 +58,7 @@ export default function FinancePage() {
     return collection(firestore, 'financial_transactions');
   }, [firestore]);
 
-  const { data: transactions, isLoading } = useCollection<any>(transactionsQuery);
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
   const onSubmit = (data: TransactionFormData) => {
     if (!firestore) return;

@@ -1,11 +1,10 @@
 'use client';
-import React, 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, User, Mail, Phone, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useCollection, useFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';

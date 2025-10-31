@@ -36,8 +36,14 @@ const villaSchema = z.object({
 });
 
 type VillaFormData = z.infer<typeof villaSchema>;
-type Villa = VillaFormData & { id: string; ownerName?: string };
-type Stakeholder = { id: string; name: string; };
+type Villa = VillaFormData & { 
+  id: string; 
+  ownerName?: string;
+};
+type Stakeholder = { 
+  id: string; 
+  name: string; 
+};
 
 export default function VillasPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

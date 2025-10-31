@@ -21,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -39,7 +39,7 @@ type Document = {
     id: string;
     fileName: string;
     fileType: string;
-    uploadDate: any;
+    uploadDate: Timestamp;
     fileUrl: string;
     storagePath: string;
 };
@@ -108,14 +108,10 @@ export default function DocumentsPage() {
   const handleDelete = async (docToDelete: Document) => {
       if (!firestore) return;
       
-      // Create a reference to the file to delete
       const fileRef = ref(storage, docToDelete.storagePath);
   
       try {
-        // Delete the file from Storage
         await deleteObject(fileRef);
-  
-        // Delete the document from Firestore
         deleteDocumentNonBlocking(doc(firestore, 'documents', docToDelete.id));
         
         toast({
@@ -251,7 +247,7 @@ export default function DocumentsPage() {
                   </Button>
                 </DialogClose>
                 <Button type="submit" disabled={isUploading}>
-                  {isUploading ? <><Loader className="ml-2 h-4 w-4 animate-spin"/> در حال بارگذاری...</> : <><Upload className="ml-2 h-4 w-4" /> ذخیره</>}
+                  {isUploading ? <><Upload className="ml-2 h-4 w-4 animate-spin"/> در حال بارگذاری...</> : <><Upload className="ml-2 h-4 w-4" /> ذخیره</>}
                 </Button>
               </DialogFooter>
             </form>

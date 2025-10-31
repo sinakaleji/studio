@@ -33,6 +33,7 @@ const personnelSchema = z.object({
 });
 
 type PersonnelFormData = z.infer<typeof personnelSchema>;
+type Personnel = PersonnelFormData & { id: string; };
 
 export default function PersonnelPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -53,7 +54,7 @@ export default function PersonnelPage() {
     return collection(firestore, 'personnel');
   }, [firestore]);
 
-  const { data: personnel, isLoading } = useCollection<any>(personnelQuery);
+  const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 
   const onSubmit = (data: PersonnelFormData) => {
     if (!firestore) return;
