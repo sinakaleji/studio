@@ -33,39 +33,50 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Badge } from '../ui/badge';
-import { cn } from '@/lib/utils';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const villaSchema = z.object({
   villaNumber: z.string().min(1, 'شماره ویلا الزامی است'),
   location: z.string().min(1, 'موقعیت الزامی است'),
   size: z.coerce.number().min(1, 'متراژ الزامی است'),
-  ownerName: z.string().min(1, 'نام مالک الزامی است'),
+  ownerId: z.string().min(1, 'انتخاب مالک الزامی است'),
 });
 
 type VillaFormData = z.infer<typeof villaSchema>;
-type Villa = VillaFormData & { id: string, ownerId?: string };
+type Villa = VillaFormData & { id: string; ownerName?: string };
+type Stakeholder = { id: string; name: string; };
 
 export default function EstateMap() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingVilla, setEditingVilla] = useState<Villa | null>(null);
-    const { firestore, user } = useFirebase();
+    const { firestore } = useFirebase();
 
-    const villasQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'villas');
-    }, [firestore]);
+    const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
+    const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
 
-    const { data: villas, isLoading } = useCollection<Villa>(villasQuery);
+    const { data: villas, isLoading: isLoadingVillas } = useCollection<Villa>(villasQuery);
+    const { data: stakeholders, isLoading: isLoadingStakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
+
+    const stakeholderMap = useMemoFirebase(() => {
+        if (!stakeholders) return new Map();
+        return new Map(stakeholders.map(s => [s.id, s.name]));
+    }, [stakeholders]);
+
+    const villasWithOwners = useMemoFirebase(() => {
+        return villas?.map(v => ({
+            ...v,
+            ownerName: stakeholderMap.get(v.ownerId) || 'نامشخص'
+        })) ?? [];
+    }, [villas, stakeholderMap]);
 
     const form = useForm<VillaFormData>({
         resolver: zodResolver(villaSchema),
-        defaultValues: { villaNumber: '', location: '', size: 0, ownerName: '' },
+        defaultValues: { villaNumber: '', location: '', size: 0, ownerId: '' },
     });
 
     const handleAddNew = () => {
         setEditingVilla(null);
-        form.reset({ villaNumber: '', location: '', size: 0, ownerName: '' });
+        form.reset({ villaNumber: '', location: '', size: 0, ownerId: '' });
         setIsDialogOpen(true);
     };
 
@@ -82,11 +93,16 @@ export default function EstateMap() {
 
     const onSubmit = (data: VillaFormData) => {
         if (!firestore) return;
+
+        const selectedStakeholder = stakeholders?.find(s => s.id === data.ownerId);
+        const villaData = {
+            ...data,
+            ownerName: selectedStakeholder?.name || 'نامشخص',
+        };
+
         if (editingVilla) {
-            updateDocumentNonBlocking(doc(firestore, 'villas', editingVilla.id), data);
+            updateDocumentNonBlocking(doc(firestore, 'villas', editingVilla.id), villaData);
         } else {
-            if (!user) return;
-            const villaData = { ...data, ownerId: user.uid };
             addDocumentNonBlocking(collection(firestore, 'villas'), villaData);
         }
         form.reset();
@@ -108,10 +124,10 @@ export default function EstateMap() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-gray-100 dark:bg-gray-800 p-4">
+                    <div className="relative aspect-video w-full overflow-auto rounded-lg border bg-gray-100 dark:bg-gray-800 p-4">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {isLoading && <p>در حال بارگذاری ویلاها...</p>}
-                            {villas?.map(villa => (
+                            {isLoadingVillas && <p>در حال بارگذاری ویلاها...</p>}
+                            {villasWithOwners?.map(villa => (
                                 <div key={villa.id} className="group relative">
                                     <Card className="flex flex-col items-center justify-center p-4 aspect-square transition-all hover:shadow-lg hover:scale-105">
                                         <Home className="w-8 h-8 text-primary mb-2" />
@@ -168,9 +184,34 @@ export default function EstateMap() {
                             <FormField control={form.control} name="size" render={({ field }) => (
                                 <FormItem><FormLabel>متراژ (متر مربع)</FormLabel><FormControl><Input type="number" placeholder="مثال: 300" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="ownerName" render={({ field }) => (
-                                <FormItem><FormLabel>نام مالک</FormLabel><FormControl><Input placeholder="مثال: علی رضایی" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
+                             <FormField
+                                control={form.control}
+                                name="ownerId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>مالک</FormLabel>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="مالک ویلا را انتخاب کنید" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {isLoadingStakeholders ? (
+                                            <SelectItem value="loading" disabled>در حال بارگذاری...</SelectItem>
+                                          ) : (
+                                            stakeholders?.map(s => (
+                                              <SelectItem key={s.id} value={s.id}>
+                                                {s.name}
+                                              </SelectItem>
+                                            ))
+                                          )}
+                                        </SelectContent>
+                                      </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="outline">انصراف</Button></DialogClose>
                                 <Button type="submit">ذخیره</Button>

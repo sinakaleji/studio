@@ -38,6 +38,13 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+     /**
+     * @description Allow authenticated users to read and write to the 'stakeholders' collection.
+     */
+    match /stakeholders/{stakeholderId} {
+      allow read, write: if isSignedIn();
+    }
+
     /**
      * @description Allow authenticated users to read and write to the 'financial_transactions' collection.
      */

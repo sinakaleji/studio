@@ -26,23 +26,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useMemoFirebase } from '@/firebase/provider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const villaSchema = z.object({
   villaNumber: z.string().min(1, 'شماره ویلا الزامی است'),
   location: z.string().min(1, 'موقعیت الزامی است'),
   size: z.coerce.number().min(1, 'متراژ الزامی است'),
-  ownerName: z.string().min(1, 'نام مالک الزامی است'),
+  ownerId: z.string().min(1, 'انتخاب مالک الزامی است'),
 });
 
 type VillaFormData = z.infer<typeof villaSchema>;
-type Villa = VillaFormData & { id: string, ownerId?: string };
-
+type Villa = VillaFormData & { id: string; ownerName?: string };
+type Stakeholder = { id: string; name: string; };
 
 export default function VillasPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVilla, setEditingVilla] = useState<Villa | null>(null);
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<VillaFormData>({
     resolver: zodResolver(villaSchema),
@@ -50,20 +50,31 @@ export default function VillasPage() {
       villaNumber: '',
       location: '',
       size: 0,
-      ownerName: '',
+      ownerId: '',
     },
   });
 
-  const villasQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'villas');
-  }, [firestore]);
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
+  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
 
-  const { data: villas, isLoading } = useCollection<Villa>(villasQuery);
+  const { data: villas, isLoading: isLoadingVillas } = useCollection<Villa>(villasQuery);
+  const { data: stakeholders, isLoading: isLoadingStakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
+
+  const stakeholderMap = useMemoFirebase(() => {
+    if (!stakeholders) return new Map();
+    return new Map(stakeholders.map(s => [s.id, s.name]));
+  }, [stakeholders]);
+
+  const villasWithOwners = useMemoFirebase(() => {
+    return villas?.map(v => ({
+      ...v,
+      ownerName: stakeholderMap.get(v.ownerId) || 'نامشخص'
+    })) ?? [];
+  }, [villas, stakeholderMap]);
 
   const handleAddNew = () => {
     setEditingVilla(null);
-    form.reset({ villaNumber: '', location: '', size: 0, ownerName: '' });
+    form.reset({ villaNumber: '', location: '', size: 0, ownerId: '' });
     setIsDialogOpen(true);
   };
 
@@ -78,19 +89,18 @@ export default function VillasPage() {
     deleteDocumentNonBlocking(doc(firestore, 'villas', villaId));
   };
 
-
   const onSubmit = (data: VillaFormData) => {
     if (!firestore) return;
-    if (editingVilla) {
-      // Update existing villa
-      updateDocumentNonBlocking(doc(firestore, 'villas', editingVilla.id), data);
-    } else {
-      // Add new villa
-      if (!user) return;
-      const villaData = {
+
+    const selectedStakeholder = stakeholders?.find(s => s.id === data.ownerId);
+    const villaData = {
         ...data,
-        ownerId: user.uid,
-      };
+        ownerName: selectedStakeholder?.name || 'نامشخص',
+    };
+
+    if (editingVilla) {
+      updateDocumentNonBlocking(doc(firestore, 'villas', editingVilla.id), villaData);
+    } else {
       addDocumentNonBlocking(collection(firestore, 'villas'), villaData);
     }
     form.reset();
@@ -114,7 +124,7 @@ export default function VillasPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoadingVillas ? (
               <p>در حال بارگذاری...</p>
             ) : (
               <Table>
@@ -128,7 +138,7 @@ export default function VillasPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {villas?.map((villa) => (
+                  {villasWithOwners.map((villa) => (
                     <TableRow key={villa.id}>
                       <TableCell>
                         <Badge>{villa.villaNumber}</Badge>
@@ -220,13 +230,28 @@ export default function VillasPage() {
               />
               <FormField
                 control={form.control}
-                name="ownerName"
+                name="ownerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>نام مالک</FormLabel>
-                    <FormControl>
-                      <Input placeholder="مثال: علی رضایی" {...field} />
-                    </FormControl>
+                    <FormLabel>مالک</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="مالک ویلا را انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {isLoadingStakeholders ? (
+                            <SelectItem value="loading" disabled>در حال بارگذاری...</SelectItem>
+                          ) : (
+                            stakeholders?.map(s => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     <FormMessage />
                   </FormItem>
                 )}

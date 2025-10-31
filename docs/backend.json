@@ -76,7 +76,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the stakeholder, typically the user's UID from Firebase Auth."
+          "description": "Unique identifier for the stakeholder."
         },
         "name": {
           "type": "string",
@@ -117,7 +117,7 @@
         },
         "ownerId": {
           "type": "string",
-          "description": "Reference to Stakeholder's UID."
+          "description": "Reference to Stakeholder's ID."
         },
         "ownerName": {
           "type": "string",
@@ -131,6 +131,7 @@
       "required": [
         "id",
         "villaNumber",
+        "ownerId",
         "ownerName"
       ]
     },
@@ -272,6 +273,10 @@
     "/personnel/{personnelId}": {
       "schema": { "$ref": "#/backend/entities/Personnel" },
       "description": "Stores detailed personnel information."
+    },
+    "/stakeholders/{stakeholderId}": {
+      "schema": { "$ref": "#/backend/entities/Stakeholder" },
+      "description": "Stores stakeholder (e.g., owner) information."
     },
     "/villas/{villaId}": {
       "schema": { "$ref": "#/backend/entities/Villa" },
