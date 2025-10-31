@@ -2,9 +2,10 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { useCollection, useFirebase } from "@/firebase";
-import { collection, query, where, Timestamp, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, Timestamp, orderBy } from "firebase/firestore";
 import { useMemoFirebase } from "@/firebase/provider";
 import { format } from "date-fns-jalali";
+import { useMemo } from "react";
 
 type Transaction = {
     id: string;
@@ -29,23 +30,25 @@ export default function FinancialChart() {
 
     const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
-    const chartData = useMemoFirebase(() => {
+    const chartData = useMemo(() => {
         if (!transactions) return [];
 
         const aggregatedData: { [key: string]: { name: string, income: number, expense: number } } = {};
 
         transactions.forEach(tx => {
             const date = tx.date.toDate();
-            const day = format(date, 'yyyy/MM/dd', { locale: { code: 'fa' } });
+            // Use a stable format for grouping that doesn't depend on client/server time rendering differences
+            const dayKey = format(date, 'yyyy-MM-dd'); 
+            const dayLabel = format(date, 'MMM d', { locale: { code: 'fa' } });
 
-            if (!aggregatedData[day]) {
-                aggregatedData[day] = { name: format(date, 'MMM d', { locale: { code: 'fa' } }), income: 0, expense: 0 };
+            if (!aggregatedData[dayKey]) {
+                aggregatedData[dayKey] = { name: dayLabel, income: 0, expense: 0 };
             }
 
             if (tx.type === 'income') {
-                aggregatedData[day].income += tx.amount;
+                aggregatedData[dayKey].income += tx.amount;
             } else {
-                aggregatedData[day].expense += tx.amount;
+                aggregatedData[dayKey].expense += tx.amount;
             }
         });
 

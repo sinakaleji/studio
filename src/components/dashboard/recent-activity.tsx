@@ -2,9 +2,17 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCollection, useFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { collection, query, orderBy, limit, Timestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useMemoFirebase } from "@/firebase/provider";
+
+type Activity = {
+    id: string;
+    description: string;
+    date: Timestamp;
+    amount: number;
+    type: 'income' | 'expense';
+};
 
 export default function RecentActivity() {
     const { firestore } = useFirebase();
@@ -14,7 +22,7 @@ export default function RecentActivity() {
         return query(collection(firestore, 'financial_transactions'), orderBy('date', 'desc'), limit(4));
     }, [firestore]);
 
-    const { data: recentActivities, isLoading } = useCollection<any>(activitiesQuery);
+    const { data: recentActivities, isLoading } = useCollection<Activity>(activitiesQuery);
 
     return (
         <Card>
@@ -26,8 +34,8 @@ export default function RecentActivity() {
                 {isLoading ? (
                     <p>در حال بارگذاری...</p>
                 ) : (
-                recentActivities?.map((activity, index) => (
-                    <div key={index} className="flex items-center gap-4">
+                recentActivities?.map((activity) => (
+                    <div key={activity.id} className="flex items-center gap-4">
                         <Avatar className="h-9 w-9">
                             <AvatarFallback className="bg-secondary text-secondary-foreground">{activity.description.slice(0, 2)}</AvatarFallback>
                         </Avatar>
