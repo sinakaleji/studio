@@ -1,9 +1,10 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Home, Users, Wallet, FileText } from 'lucide-react';
+import { Home, Users, Wallet, FileText, UserCog } from 'lucide-react';
 import { useCollection, useFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useMemo } from 'react';
 
 export default function OverviewCards() {
   const { firestore } = useFirebase();
@@ -16,6 +17,9 @@ export default function OverviewCards() {
   
   const documentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'documents') : null, [firestore]);
   const { data: documents } = useCollection(documentsQuery);
+
+  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
+  const { data: stakeholders } = useCollection(stakeholdersQuery);
 
   const overviewData = [
     {
@@ -35,15 +39,15 @@ export default function OverviewCards() {
     },
      {
       title: 'ذی‌نفعان',
-      value: '۴', // Placeholder
-      icon: Users,
+      value: stakeholders?.length.toLocaleString('fa-IR') ?? '۰',
+      icon: UserCog,
     },
   ];
 
   return (
     <>
-      {overviewData.map((card) => (
-        <Card key={card.title}>
+      {overviewData.map((card, index) => (
+        <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
             <card.icon className="h-4 w-4 text-muted-foreground" />
