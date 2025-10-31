@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader, Briefcase, UserCog } from 'lucide-react';
+import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader, Briefcase, UserCog, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
@@ -23,6 +23,7 @@ const menuItems = [
   { href: '/villas', label: 'مدیریت ویلاها', icon: Home },
   { href: '/stakeholders', label: 'مدیریت ذی‌نفعان', icon: UserCog },
   { href: '/personnel', label: 'مدیریت پرسنل', icon: Users },
+  { href: '/attendance', label: 'حضور و غیاب', icon: Clock },
   { href: '/finance', label: 'مدیریت مالی', icon: CircleDollarSign },
   { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase },
   { href: '/documents', label: 'مدیریت مدارک', icon: FileText },

@@ -59,6 +59,14 @@
         "jobTitle": {
           "type": "string",
           "description": "Job title of the personnel."
+        },
+        "accountNumber": {
+            "type": "string",
+            "description": "Bank account number for salary payment."
+        },
+        "insuranceNumber": {
+            "type": "string",
+            "description": "Social security or insurance number."
         }
       },
       "required": [
@@ -257,6 +265,76 @@
         "uploadDate",
         "fileUrl"
       ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents daily attendance records for personnel.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique ID for the attendance record (e.g., YYYY-MM-DD_personnelId)."
+        },
+        "personnelId": {
+          "type": "string",
+          "description": "Reference to the Personnel's ID."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The date of the record."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["present", "absent"],
+          "description": "Attendance status for the day."
+        },
+        "entryTime": {
+          "type": "string",
+          "format": "time",
+          "description": "The time of entry."
+        },
+        "exitTime": {
+          "type": "string",
+          "format": "time",
+          "description": "The time of exit."
+        },
+        "isLate": {
+          "type": "boolean",
+          "description": "Whether the personnel was late on this day."
+        }
+      },
+      "required": ["id", "personnelId", "date", "status"]
+    },
+    "PayrollSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PayrollSettings",
+      "type": "object",
+      "description": "Stores global settings for payroll calculation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier, should be a fixed value like 'default'."
+        },
+        "insuranceRate": {
+          "type": "number",
+          "description": "The percentage rate for insurance deductions."
+        },
+        "taxBrackets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": { "type": "number" },
+              "to": { "type": "number" },
+              "rate": { "type": "number" }
+            }
+          },
+          "description": "An array defining tax brackets and their rates."
+        }
+      },
+      "required": ["id", "insuranceRate", "taxBrackets"]
     }
   },
   "auth": {
@@ -293,6 +371,14 @@
     "/documents/{documentId}": {
       "schema": { "$ref": "#/backend/entities/Document" },
       "description": "Stores documents related to various entities."
+    },
+    "/attendances/{attendanceId}": {
+        "schema": { "$ref": "#/backend/entities/Attendance" },
+        "description": "Stores daily attendance records for all personnel."
+    },
+    "/payroll_settings/{settingId}": {
+        "schema": { "$ref": "#/backend/entities/PayrollSettings" },
+        "description": "Stores global payroll settings like tax and insurance rates."
     }
   }
 }
