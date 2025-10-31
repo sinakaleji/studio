@@ -58,6 +58,13 @@ service cloud.firestore {
     match /estates/{estateId} {
         allow read, write: if isSignedIn();
     }
+
+    /**
+     * @description Allow authenticated users to read and write to the 'payrolls' collection.
+     */
+    match /payrolls/{payrollId} {
+        allow read, write: if isSignedIn();
+    }
     
   }
 }

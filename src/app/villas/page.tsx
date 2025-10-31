@@ -4,7 +4,7 @@ import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,11 +20,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useMemoFirebase } from '@/firebase/provider';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const villaSchema = z.object({
   villaNumber: z.string().min(1, 'شماره ویلا الزامی است'),
@@ -34,9 +36,12 @@ const villaSchema = z.object({
 });
 
 type VillaFormData = z.infer<typeof villaSchema>;
+type Villa = VillaFormData & { id: string, ownerId?: string };
+
 
 export default function VillasPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingVilla, setEditingVilla] = useState<Villa | null>(null);
   const { firestore, user } = useFirebase();
 
   const form = useForm<VillaFormData>({
@@ -54,17 +59,43 @@ export default function VillasPage() {
     return collection(firestore, 'villas');
   }, [firestore]);
 
-  const { data: villas, isLoading } = useCollection<any>(villasQuery);
+  const { data: villas, isLoading } = useCollection<Villa>(villasQuery);
+
+  const handleAddNew = () => {
+    setEditingVilla(null);
+    form.reset({ villaNumber: '', location: '', size: 0, ownerName: '' });
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (villa: Villa) => {
+    setEditingVilla(villa);
+    form.reset(villa);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (villaId: string) => {
+    if (!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'villas', villaId));
+  };
+
 
   const onSubmit = (data: VillaFormData) => {
-    if (!firestore || !user) return;
-    const villaData = {
-      ...data,
-      ownerId: user.uid, // Assign current user as owner
-    };
-    addDocumentNonBlocking(collection(firestore, 'villas'), villaData);
+    if (!firestore) return;
+    if (editingVilla) {
+      // Update existing villa
+      updateDocumentNonBlocking(doc(firestore, 'villas', editingVilla.id), data);
+    } else {
+      // Add new villa
+      if (!user) return;
+      const villaData = {
+        ...data,
+        ownerId: user.uid,
+      };
+      addDocumentNonBlocking(collection(firestore, 'villas'), villaData);
+    }
     form.reset();
     setIsDialogOpen(false);
+    setEditingVilla(null);
   };
 
   return (
@@ -77,7 +108,7 @@ export default function VillasPage() {
               <CardTitle>لیست ویلاها</CardTitle>
               <CardDescription>مشاهده و مدیریت ویلاهای ثبت شده در شهرک</CardDescription>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={handleAddNew}>
               <PlusCircle className="ml-2 h-4 w-4" />
               افزودن ویلا
             </Button>
@@ -93,6 +124,7 @@ export default function VillasPage() {
                     <TableHead>موقعیت</TableHead>
                     <TableHead>متراژ (متر مربع)</TableHead>
                     <TableHead>مالک</TableHead>
+                    <TableHead>عملیات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -104,6 +136,30 @@ export default function VillasPage() {
                       <TableCell>{villa.location}</TableCell>
                       <TableCell>{villa.size}</TableCell>
                       <TableCell>{villa.ownerName}</TableCell>
+                       <TableCell className="flex gap-2">
+                        <Button variant="outline" size="icon" onClick={() => handleEdit(villa)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button variant="destructive" size="icon">
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>آیا مطمئن هستید؟</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                این عمل غیرقابل بازگشت است. ویلای {villa.villaNumber} برای همیشه حذف خواهد شد.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>انصراف</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(villa.id)}>حذف</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -116,8 +172,10 @@ export default function VillasPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>افزودن ویلای جدید</DialogTitle>
-            <DialogDescription>اطلاعات ویلای جدید را وارد کنید.</DialogDescription>
+            <DialogTitle>{editingVilla ? 'ویرایش ویلا' : 'افزودن ویلای جدید'}</DialogTitle>
+            <DialogDescription>
+              {editingVilla ? 'اطلاعات ویلا را ویرایش کنید.' : 'اطلاعات ویلای جدید را وارد کنید.'}
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

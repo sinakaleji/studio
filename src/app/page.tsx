@@ -1,3 +1,4 @@
+'use client';
 import AppLayout from '@/components/app-layout';
 import Header from '@/components/header';
 import OverviewCards from '@/components/dashboard/overview-cards';

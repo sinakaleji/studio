@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader } from 'lucide-react';
+import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader, Briefcase } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
@@ -23,7 +23,9 @@ const menuItems = [
   { href: '/villas', label: 'مدیریت ویلاها', icon: Home },
   { href: '/personnel', label: 'مدیریت پرسنل', icon: Users },
   { href: '/finance', label: 'مدیریت مالی', icon: CircleDollarSign },
+  { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase },
   { href: '/documents', label: 'مدیریت مدارک', icon: FileText },
+  { href: '/settings', label: 'تنظیمات', icon: Settings },
 ];
 
 export default function AppSidebar() {
@@ -108,10 +110,12 @@ export default function AppSidebar() {
                     <UserCircle className="ml-2 h-4 w-4" />
                     <span>پروفایل</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                    <Settings className="ml-2 h-4 w-4" />
-                    <span>تنظیمات</span>
-                </DropdownMenuItem>
+                 <Link href="/settings" passHref>
+                    <DropdownMenuItem>
+                        <Settings className="ml-2 h-4 w-4" />
+                        <span>تنظیمات</span>
+                    </DropdownMenuItem>
+                </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} disabled={!user}>
                     <LogOut className="ml-2 h-4 w-4" />
