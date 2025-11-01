@@ -45,17 +45,17 @@ const ESTATE_DOC_ID = "main-estate-info";
 const payrollSettingsData = {
     insuranceRate: 7, // 7%
     taxBrackets: [
-        { from: 0, to: 103909680, rate: 0 },
-        { from: 103909681, to: 140000000, rate: 10 },
-        { from: 140000001, to: 230000000, rate: 15 },
-        { from: 230000001, to: 340000000, rate: 20 },
-        { from: 340000001, to: Infinity, rate: 30 },
+        { from: 0, to: 144000000, rate: 0 },
+        { from: 144000001, to: 198000000, rate: 10 },
+        { from: 198000001, to: 324000000, rate: 15 },
+        { from: 324000001, to: 480000000, rate: 20 },
+        { from: 480000001, to: Infinity, rate: 30 },
     ],
-    monthlyHousingAllowance: 9000000,
-    monthlyFoodAllowance: 22000000,
-    monthlySeniorityBase: 2820000,
+    monthlyHousingAllowance: 900000,
+    monthlyFoodAllowance: 1400000,
+    perChildAllowance: 716600,
     marriageAllowance: 5000000,
-    perChildAllowance: 10390968, // This is based on image but seems high for per child. It's likely the total for a specific case. Using it as per-child for now.
+    monthlySeniorityBase: 2100000,
 };
 const PAYROLL_SETTINGS_DOC_ID = 'default';
 
@@ -78,7 +78,7 @@ async function seedCollection(firestore: Firestore, collectionName: string, data
     await batch.commit();
     console.log(`${collectionName} seeded successfully.`);
   } else {
-    console.log(`${collectionName} already has data, skipping seed.`);
+    // console.log(`${collectionName} already has data, skipping seed.`);
   }
 }
 
@@ -90,9 +90,9 @@ async function seedSingleDoc(firestore: Firestore, collectionName: string, docId
         await writeBatch(firestore).set(docRef, data).commit();
         console.log(`Document ${collectionName}/${docId} seeded successfully.`);
     } else {
-        console.log(`Document ${collectionName}/${docId} already exists, merging data...`);
-        await writeBatch(firestore).set(docRef, data, { merge: true }).commit();
-        console.log(`Document ${collectionName}/${docId} merged successfully.`);
+        // console.log(`Document ${collectionName}/${docId} already exists, merging data...`);
+        // await writeBatch(firestore).set(docRef, data, { merge: true }).commit();
+        // console.log(`Document ${collectionName}/${docId} merged successfully.`);
     }
 }
 

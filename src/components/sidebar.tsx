@@ -10,42 +10,68 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader, Briefcase, UserCog, Clock } from 'lucide-react';
+import { Building2, LayoutGrid, Home, Users, CircleDollarSign, FileText, UserCircle, LogOut, Settings, Loader, Briefcase, UserCog, Clock, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
 import { useUser, useFirebase } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
 
-const menuItems = [
-  { href: '/', label: 'داشبورد', icon: LayoutGrid },
-  { href: '/villas', label: 'مدیریت ویلاها', icon: Home },
-  { href: '/stakeholders', label: 'مدیریت ذی‌نفعان', icon: UserCog },
-  { href: '/personnel', label: 'مدیریت پرسنل', icon: Users },
-  { href: '/attendance', label: 'حضور و غیاب', icon: Clock },
-  { href: '/finance', label: 'مدیریت مالی', icon: CircleDollarSign },
-  { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase },
-  { href: '/documents', label: 'مدیریت مدارک', icon: FileText },
-  { href: '/settings', label: 'تنظیمات', icon: Settings },
+
+const allMenuItems = [
+  { href: '/dashboard', label: 'داشبورد', icon: LayoutGrid, roles: ['super_admin', 'admin', 'financial_expert'] },
+  { href: '/villas', label: 'مدیریت ویلاها', icon: Home, roles: ['super_admin', 'admin'] },
+  { href: '/stakeholders', label: 'مدیریت ذی‌نفعان', icon: UserCog, roles: ['super_admin', 'admin'] },
+  { href: '/personnel', label: 'مدیریت پرسنل', icon: Users, roles: ['super_admin', 'admin'] },
+  { href: '/attendance', label: 'حضور و غیاب', icon: Clock, roles: ['super_admin', 'admin'] },
+  { href: '/finance', label: 'مدیریت مالی', icon: CircleDollarSign, roles: ['super_admin', 'admin', 'financial_expert'] },
+  { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase, roles: ['super_admin', 'admin'] },
+  { href: '/documents', label: 'مدیریت مدارک', icon: FileText, roles: ['super_admin', 'admin'] },
+  { href: '/users', label: 'مدیریت کاربران', icon: ShieldCheck, roles: ['super_admin'] },
+  { href: '/settings', label: 'تنظیمات', icon: Settings, roles: ['super_admin', 'admin'] },
 ];
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoadingRole, setIsLoadingRole] = useState(true);
 
   useEffect(() => {
-    if (!user && !isUserLoading && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
+    const fetchUserRole = async () => {
+      if (user && firestore) {
+        setIsLoadingRole(true);
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          setUserRole(userDocSnap.data().role);
+        } else {
+          setUserRole(null); // No role assigned
+        }
+        setIsLoadingRole(false);
+      } else {
+        setUserRole(null);
+        setIsLoadingRole(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, firestore]);
+
+  const menuItems = useMemo(() => {
+    if (!userRole) return [];
+    return allMenuItems.filter(item => item.roles.includes(userRole));
+  }, [userRole]);
 
   const handleSignOut = () => {
     if (auth) {
         auth.signOut();
     }
   }
+
+  const isLoading = isUserLoading || isLoadingRole;
 
   return (
     <Sidebar side="right" collapsible="icon" variant="sidebar">
@@ -78,24 +104,24 @@ export default function AppSidebar() {
             <DropdownMenuTrigger asChild>
                  <Button variant="ghost" className="h-14 w-full justify-start gap-2 p-2 hover:bg-sidebar-accent">
                     <Avatar className="size-8">
-                      {isUserLoading ? (
+                      {isLoading ? (
                           <Loader className="animate-spin" />
                       ) : user ? (
                           <>
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
-                            <AvatarFallback>{user.isAnonymous ? 'AN' : (user.displayName || user.email || 'U').charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{(user.displayName || user.email || 'U').charAt(0)}</AvatarFallback>
                           </>
                       ) : (
                           <AvatarFallback>?</AvatarFallback>
                       )}
                     </Avatar>
                     <div className="flex flex-col items-start truncate group-data-[collapsible=icon]:hidden">
-                      {isUserLoading ? (
+                      {isLoading ? (
                           <span className='text-xs'>در حال بارگذاری...</span>
                       ) : user ? (
                           <>
-                            <span className="font-medium">{user.isAnonymous ? 'کاربر مهمان' : (user.displayName || 'کاربر')}</span>
-                            <span className="text-xs text-muted-foreground">{user.isAnonymous ? '' : user.email}</span>
+                            <span className="font-medium">{user.displayName || user.email}</span>
+                            <span className="text-xs text-muted-foreground">{userRole ? `نقش: ${userRole}` : 'بدون نقش'}</span>
                           </>
                       ): (
                           <span className="font-medium">وارد نشده</span>
@@ -106,10 +132,6 @@ export default function AppSidebar() {
             <DropdownMenuContent side="top" align="start" className="w-56" sideOffset={10}>
                 <DropdownMenuLabel>حساب کاربری</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem disabled>
-                    <UserCircle className="ml-2 h-4 w-4" />
-                    <span>پروفایل</span>
-                </DropdownMenuItem>
                  <Link href="/settings" passHref>
                     <DropdownMenuItem>
                         <Settings className="ml-2 h-4 w-4" />

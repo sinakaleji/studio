@@ -1,5 +1,21 @@
 {
   "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents an application user with specific roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Authentication user ID." },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "financial_expert"],
+          "description": "The role of the user, which determines their access level."
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
     "Estate": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Estate",
@@ -354,11 +370,14 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/User" },
+      "description": "Stores application user profiles and their roles."
+    },
     "/estates/{estateId}": {
       "schema": { "$ref": "#/backend/entities/Estate" },
       "description": "Stores general estate information. Should contain a single document with a fixed ID for main settings."
