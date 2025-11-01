@@ -140,92 +140,97 @@ export default function PayrollPage() {
 
     setIsCalculating(true);
     
-    // 1. Fetch Attendance Data
-    const [year, month] = data.month.split('-').map(Number);
-    const startDate = `${data.month}-01`;
-    const endDate = format(lastDayOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd');
+    try {
+        const [year, month] = data.month.split('-').map(Number);
+        const startDate = `${data.month}-01`;
+        const endDate = format(lastDayOfMonth(new Date(year, month - 1)), 'yyyy-MM-dd');
 
-    const attendanceQuery = query(
-        collection(firestore, 'attendances'),
-        where('personnelId', '==', data.personnelId),
-        where('date', '>=', startDate),
-        where('date', '<=', endDate)
-    );
-    const attendanceSnapshot = await getDocs(attendanceQuery);
-    const attendances = attendanceSnapshot.docs.map(doc => doc.data() as Attendance);
+        const attendanceQuery = query(
+            collection(firestore, 'attendances'),
+            where('personnelId', '==', data.personnelId),
+            where('date', '>=', startDate),
+            where('date', '<=', endDate)
+        );
+        const attendanceSnapshot = await getDocs(attendanceQuery);
+        const attendances = attendanceSnapshot.docs.map(doc => doc.data() as Attendance);
 
-    // 2. Calculate Hours
-    let totalWorkHours = 0;
-    attendances.forEach(att => {
-        if (att.status === 'present' && att.entryTime && att.exitTime) {
-            const entry = new Date(`1970-01-01T${att.entryTime}`);
-            const exit = new Date(`1970-01-01T${att.exitTime}`);
-            const diff = (exit.getTime() - entry.getTime()) / (1000 * 60 * 60); // difference in hours
-            totalWorkHours += diff > 0 ? diff : 0;
-        }
-    });
-    
-    const baseSalary = parseFloat(String(selectedPersonnel.baseSalary)) || 0;
-    const overtimeHours = Math.max(0, totalWorkHours - WORK_HOURS_PER_MONTH);
-    const hourlyRate = baseSalary / WORK_HOURS_PER_MONTH;
-    const overtimePay = parseFloat((overtimeHours * hourlyRate * OVERTIME_RATE).toFixed(0));
-
-    // 3. Calculate Benefits
-    const housingAllowance = parseFloat(String(payrollSettings.monthlyHousingAllowance)) || 0;
-    const foodAllowance = parseFloat(String(payrollSettings.monthlyFoodAllowance)) || 0;
-    const childAllowance = (selectedPersonnel.numberOfChildren || 0) * (payrollSettings.perChildAllowance || 0);
-    const marriageAllowance = (selectedPersonnel.isMarried ? payrollSettings.marriageAllowance : 0) || 0;
-    const seniorityPay = payrollSettings.monthlySeniorityBase || 0; // Assuming everyone gets it for simplicity
-
-    const totalEarnings = parseFloat((baseSalary + housingAllowance + foodAllowance + childAllowance + marriageAllowance + seniorityPay + overtimePay).toFixed(0));
-
-    // 4. Calculate Deductions
-    const insuranceDeduction = parseFloat((totalEarnings * (payrollSettings.insuranceRate / 100)).toFixed(0));
-    
-    let taxDeduction = 0;
-    const annualTaxableIncome = totalEarnings * 12;
-    let annualTax = 0;
-
-    payrollSettings.taxBrackets.forEach(bracket => {
-        if (annualTaxableIncome > bracket.from) {
-            const incomeInBracket = Math.min(annualTaxableIncome, bracket.to === Infinity ? annualTaxableIncome : bracket.to) - bracket.from;
-            if (incomeInBracket > 0) {
-                annualTax += incomeInBracket * (bracket.rate / 100);
+        let totalWorkHours = 0;
+        attendances.forEach(att => {
+            if (att.status === 'present' && att.entryTime && att.exitTime) {
+                const entry = new Date(`1970-01-01T${att.entryTime}`);
+                const exit = new Date(`1970-01-01T${att.exitTime}`);
+                const diff = (exit.getTime() - entry.getTime()) / (1000 * 60 * 60);
+                totalWorkHours += diff > 0 ? diff : 0;
             }
-        }
-    });
+        });
+        
+        const baseSalary = parseFloat(String(selectedPersonnel.baseSalary)) || 0;
+        const overtimeHours = Math.max(0, totalWorkHours - WORK_HOURS_PER_MONTH);
+        const hourlyRate = baseSalary / WORK_HOURS_PER_MONTH;
+        const overtimePay = parseFloat((overtimeHours * hourlyRate * OVERTIME_RATE).toFixed(0));
 
-    taxDeduction = parseFloat((annualTax > 0 ? annualTax / 12 : 0).toFixed(0));
-    
-    const totalDeductions = parseFloat((insuranceDeduction + taxDeduction).toFixed(0));
-    const netPay = parseFloat((totalEarnings - totalDeductions).toFixed(0));
+        const housingAllowance = parseFloat(String(payrollSettings.monthlyHousingAllowance)) || 0;
+        const foodAllowance = parseFloat(String(payrollSettings.monthlyFoodAllowance)) || 0;
+        const childAllowance = (parseFloat(String(selectedPersonnel.numberOfChildren)) || 0) * (parseFloat(String(payrollSettings.perChildAllowance)) || 0);
+        const marriageAllowance = (selectedPersonnel.isMarried ? parseFloat(String(payrollSettings.marriageAllowance)) : 0) || 0;
+        const seniorityPay = parseFloat(String(payrollSettings.monthlySeniorityBase)) || 0;
 
-    // 5. Create Payroll Document
-    const payrollData: Omit<Payroll, 'id' | 'payDate' | 'personnelName'> = {
-      personnelId: data.personnelId,
-      month: data.month,
-      baseSalary,
-      housingAllowance,
-      foodAllowance,
-      childAllowance,
-      marriageAllowance,
-      seniorityPay,
-      overtimeHours: parseFloat(overtimeHours.toFixed(2)),
-      overtimePay,
-      totalEarnings,
-      insuranceDeduction,
-      taxDeduction,
-      totalDeductions,
-      netPay,
-    };
-    
-    const finalDoc = { ...payrollData, payDate: serverTimestamp() };
-    await addDocumentNonBlocking(collection(firestore, 'payrolls'), finalDoc);
+        const totalEarnings = baseSalary + housingAllowance + foodAllowance + childAllowance + marriageAllowance + seniorityPay + overtimePay;
+        
+        const insuranceDeduction = parseFloat((totalEarnings * (parseFloat(String(payrollSettings.insuranceRate)) / 100)).toFixed(0));
+        
+        let taxDeduction = 0;
+        const annualTaxableIncome = totalEarnings * 12;
+        let annualTax = 0;
 
-    setIsCalculating(false);
-    setIsFormOpen(false);
-    form.reset({ personnelId: '', month: data.month });
-    toast({ title: 'موفقیت‌آمیز', description: 'فیش حقوقی جدید با موفقیت محاسبه و ثبت شد.' });
+        payrollSettings.taxBrackets.forEach(bracket => {
+            const from = parseFloat(String(bracket.from));
+            const to = bracket.to === Infinity ? Infinity : parseFloat(String(bracket.to));
+            const rate = parseFloat(String(bracket.rate));
+            
+            if (annualTaxableIncome > from) {
+                const incomeInBracket = Math.min(annualTaxableIncome, to) - from;
+                if (incomeInBracket > 0) {
+                    annualTax += incomeInBracket * (rate / 100);
+                }
+            }
+        });
+
+        taxDeduction = parseFloat((annualTax > 0 ? annualTax / 12 : 0).toFixed(0));
+        
+        const totalDeductions = insuranceDeduction + taxDeduction;
+        const netPay = totalEarnings - totalDeductions;
+
+        const payrollData: Omit<Payroll, 'id' | 'payDate' | 'personnelName'> = {
+          personnelId: data.personnelId,
+          month: data.month,
+          baseSalary,
+          housingAllowance,
+          foodAllowance,
+          childAllowance,
+          marriageAllowance,
+          seniorityPay,
+          overtimeHours: parseFloat(overtimeHours.toFixed(2)),
+          overtimePay,
+          totalEarnings: parseFloat(totalEarnings.toFixed(0)),
+          insuranceDeduction,
+          taxDeduction,
+          totalDeductions: parseFloat(totalDeductions.toFixed(0)),
+          netPay: parseFloat(netPay.toFixed(0)),
+        };
+        
+        const finalDoc = { ...payrollData, payDate: serverTimestamp() };
+        await addDocumentNonBlocking(collection(firestore, 'payrolls'), finalDoc);
+
+        toast({ title: 'موفقیت‌آمیز', description: 'فیش حقوقی جدید با موفقیت محاسبه و ثبت شد.' });
+    } catch (error) {
+        console.error("Error calculating payroll:", error);
+        toast({ variant: 'destructive', title: 'خطا در محاسبه', description: 'مشکلی در هنگام محاسبه حقوق به وجود آمد.' });
+    } finally {
+        setIsCalculating(false);
+        setIsFormOpen(false);
+        form.reset({ personnelId: '', month: data.month });
+    }
   };
 
   return (

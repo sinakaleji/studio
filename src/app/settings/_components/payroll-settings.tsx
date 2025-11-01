@@ -51,11 +51,11 @@ export default function PayrollSettings() {
     resolver: zodResolver(payrollSettingsSchema),
     defaultValues: {
       insuranceRate: 7,
-      monthlyHousingAllowance: 9000000,
-      monthlyFoodAllowance: 22000000,
-      perChildAllowance: 10390968,
+      monthlyHousingAllowance: 900000,
+      monthlyFoodAllowance: 1400000,
+      perChildAllowance: 716600,
       marriageAllowance: 5000000,
-      monthlySeniorityBase: 2820000,
+      monthlySeniorityBase: 2100000,
       taxBrackets: [],
     },
   });
