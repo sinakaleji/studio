@@ -23,11 +23,9 @@ export default function RootPage() {
 
     if (!user) {
       setStatus('unauthenticated');
-      if (!publicPaths.includes(window.location.pathname)) {
-        router.replace('/login');
-      } else {
-        setStatus('idle'); 
-      }
+      // No need to check publicPaths here, just redirect if not on a public path.
+      // But since this IS the root page, we redirect to login.
+      router.replace('/login');
       return;
     }
     
@@ -50,7 +48,6 @@ export default function RootPage() {
                     setStatus('authenticated_with_role');
                     router.replace('/dashboard');
                   } else {
-                     // This case should ideally not be hit if setDoc is successful
                      setStatus('authenticated_no_role');
                   }
               })
@@ -61,11 +58,10 @@ export default function RootPage() {
                   requestResourceData: userData,
                 });
                 errorEmitter.emit('permission-error', contextualError);
-                // Keep the user on a pending/error page
                 setStatus('permission_denied');
                 setStatusMessage('خطا در اختصاص دسترسی. لطفاً با مدیر سیستم تماس بگیرید.');
               });
-            return; // Exit after initiating the async setDoc
+            return;
           }
         }
         
@@ -77,7 +73,7 @@ export default function RootPage() {
         }
       } catch (error) {
          console.error("Error checking user role:", error);
-         setStatus('permission_denied'); // Generic error state
+         setStatus('permission_denied');
          setStatusMessage('خطایی در بررسی نقش کاربری رخ داد.');
       }
     };
@@ -93,11 +89,7 @@ export default function RootPage() {
     }
   }
   
-  if (status === 'unauthenticated' && publicPaths.includes(window.location.pathname)) {
-    return null;
-  }
-
-  if (status === 'loading' || status === 'unauthenticated') {
+  if (status === 'loading') {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -128,17 +120,13 @@ export default function RootPage() {
     )
   }
 
-  // This will be shown briefly while redirecting for authenticated users with roles
-  if(status === 'authenticated_with_role'){
-     return (
+  // This will be shown briefly while redirecting for authenticated users with roles or during initial load
+  return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">خوش آمدید! در حال انتقال به داشبورد...</p>
+            <p className="text-muted-foreground">{statusMessage}</p>
         </div>
       </div>
-    );
-  }
-
-  return null;
+  );
 }
