@@ -75,7 +75,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const firebaseServices = useMemo(() => {
     return initializeFirebase();
   }, []); 
-  const router = useRouter();
   
   useEffect(() => {
     const setup = async () => {
@@ -84,7 +83,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
         }
     }
     setup();
-  }, [firebaseServices.firestore, firebaseServices.auth]);
+  }, [firebaseServices]);
 
   // Temporary effect to fix the super_admin role assignment
   useEffect(() => {
@@ -99,8 +98,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
               try {
                 await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
                 console.log("Successfully assigned super_admin role to sinakaleji@gmail.com");
-                // Force a redirect to ensure AuthGuard re-evaluates the new role
-                router.replace('/dashboard');
               } catch (e) {
                 console.error("Failed to assign super_admin role:", e);
               }
@@ -112,7 +109,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     };
 
     fixSuperAdmin();
-  }, [firebaseServices, router]);
+  }, [firebaseServices]);
 
   return (
     <FirebaseProvider
