@@ -6,6 +6,7 @@ import { initializeFirebase } from '@/firebase';
 import { seedDatabase } from '@/lib/data-seeder';
 import { usePathname, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -22,28 +23,43 @@ function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
-      if (!isUserLoading) {
-        if (user) {
-          if (publicPaths.includes(pathname)) {
+      if (isUserLoading) return;
+
+      if (user) {
+        // User is logged in, check their role.
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        const userRole = userDocSnap.exists() ? userDocSnap.data().role : null;
+
+        if (userRole) {
+          // User has a role, they can access protected pages.
+          // If they are on a public page, redirect to dashboard.
+          if (publicPaths.includes(pathname) || pathname === '/') {
             router.replace('/dashboard');
           }
         } else {
-          // If user is not logged in and not on a public page, redirect to login
-          if (!publicPaths.includes(pathname)) {
-            router.replace('/login');
+          // User has no role, they should only be on the root page.
+          if (pathname !== '/') {
+            router.replace('/');
           }
         }
-        setIsAuthCheckComplete(true);
+      } else {
+        // User is not logged in.
+        // If not on a public page, redirect to login.
+        if (!publicPaths.includes(pathname)) {
+          router.replace('/login');
+        }
       }
+      setIsAuthCheckComplete(true);
     };
     checkAuthAndRedirect();
   }, [user, isUserLoading, router, pathname, firestore]);
   
-  if (!isAuthCheckComplete && !publicPaths.includes(pathname)) {
+  if (!isAuthCheckComplete) {
       return (
           <div className="flex h-screen w-full items-center justify-center">
-              {/* You can replace this with a more sophisticated loading spinner */}
-              <p>Loading...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className='mr-2'>در حال بارگذاری...</p>
           </div>
       );
   }
