@@ -75,11 +75,11 @@ export default function DocumentsPage() {
   const documentsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'documents'), orderBy('uploadDate', 'desc'));
-  }, [firestore]);
+  }, []);
 
-  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
-  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
-  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, []);
+  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, []);
+  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, []);
 
   const { data: documents, isLoading } = useCollection<Document>(documentsQuery);
   const { data: villas } = useCollection<Villa>(villasQuery);

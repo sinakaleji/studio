@@ -56,7 +56,7 @@ export default function FinancePage() {
   const transactionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'financial_transactions'), orderBy('date', 'desc'));
-  }, [firestore]);
+  }, []);
 
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 

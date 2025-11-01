@@ -85,17 +85,17 @@ export default function PayrollPage() {
   
   const { setValue, getValues } = form;
 
-  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
+  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, []);
   const { data: personnel, isLoading: isLoadingPersonnel } = useCollection<Personnel>(personnelQuery);
 
   const selectedMonth = form.watch('month');
   const payrollsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedMonth) return null;
     return query(collection(firestore, 'payrolls'), where('month', '==', selectedMonth));
-  }, [firestore, selectedMonth]);
+  }, [selectedMonth]);
   const { data: payrolls, isLoading: isLoadingPayrolls } = useCollection<Payroll>(payrollsQuery);
 
-  const payrollSettingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'payroll_settings', 'default') : null, [firestore]);
+  const payrollSettingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'payroll_settings', 'default') : null, []);
   const { data: payrollSettings } = useDoc<PayrollSettings>(payrollSettingsDoc);
 
   const personnelMap = useMemo(() => {

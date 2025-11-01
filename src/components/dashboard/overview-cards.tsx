@@ -9,13 +9,13 @@ import { useMemo } from 'react';
 export default function OverviewCards() {
   const { firestore } = useFirebase();
 
-  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, []);
   const { data: villas } = useCollection(villasQuery);
 
-  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
+  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, []);
   const { data: personnel } = useCollection(personnelQuery);
   
-  const transactionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'financial_transactions') : null, [firestore]);
+  const transactionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'financial_transactions') : null, []);
   const { data: transactions } = useCollection(transactionsQuery);
 
   const { totalIncome, totalExpense, netProfit } = useMemo(() => {

@@ -5,7 +5,7 @@ import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, PlusCircle, Loader2 } from 'lucide-react';
-import { useCollection, useFirebase, createUserWithEmailAndPassword } from '@/firebase';
+import { useCollection, useFirebase } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import {
@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 
 const userRoleSchema = z.object({
@@ -67,7 +68,7 @@ export default function UsersPage() {
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, []);
 
   const { data: users, isLoading } = useCollection<User>(usersQuery);
 

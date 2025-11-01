@@ -25,7 +25,7 @@ export default function RecentActivity() {
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'financial_transactions'), orderBy('date', 'desc'), limit(5));
-      }, [firestore]);
+      }, []);
     
     const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
