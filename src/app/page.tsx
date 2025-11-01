@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +29,12 @@ export default function RootPage() {
       
       try {
         const userDocSnap = await getDoc(userDocRef);
+        
+        if (user.email === 'sinakaleji@gmail.com' && (!userDocSnap.exists() || userDocSnap.data()?.role !== 'super_admin')) {
+            await setDoc(userDocRef, { uid: user.uid, email: user.email, role: 'super_admin' }, { merge: true });
+            router.replace('/dashboard');
+            return;
+        }
         
         if (userDocSnap.exists() && userDocSnap.data()?.role) {
           setStatus('authenticated_with_role');
