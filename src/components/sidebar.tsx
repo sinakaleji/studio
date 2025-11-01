@@ -26,7 +26,7 @@ const allMenuItems = [
   { href: '/personnel', label: 'مدیریت پرسنل', icon: Users, roles: ['super_admin', 'admin'] },
   { href: '/attendance', label: 'حضور و غیاب', icon: Clock, roles: ['super_admin', 'admin'] },
   { href: '/finance', label: 'مدیریت مالی', icon: CircleDollarSign, roles: ['super_admin', 'admin', 'financial_expert'] },
-  { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase, roles: ['super_admin', 'admin'] },
+  { href: '/payroll', label: 'حقوق و دستمزد', icon: Briefcase, roles: ['super_admin', 'admin', 'financial_expert'] },
   { href: '/documents', label: 'مدیریت مدارک', icon: FileText, roles: ['super_admin', 'admin'] },
   { href: '/users', label: 'مدیریت کاربران', icon: ShieldCheck, roles: ['super_admin'] },
   { href: '/settings', label: 'تنظیمات', icon: Settings, roles: ['super_admin', 'admin'] },
@@ -51,14 +51,14 @@ export default function AppSidebar() {
           setUserRole(null); // No role assigned
         }
         setIsLoadingRole(false);
-      } else {
+      } else if (!isUserLoading) {
         setUserRole(null);
         setIsLoadingRole(false);
       }
     };
 
     fetchUserRole();
-  }, [user, firestore]);
+  }, [user, firestore, isUserLoading]);
 
   const menuItems = useMemo(() => {
     if (!userRole) return [];
