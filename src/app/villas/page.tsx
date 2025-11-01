@@ -244,7 +244,7 @@ export default function VillasPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>مالک</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="مالک ویلا را انتخاب کنید" />
