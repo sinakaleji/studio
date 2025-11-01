@@ -7,38 +7,50 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
+const publicPaths = ['/login', '/signup'];
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser();
   const { firestore, auth } = useFirebase();
   const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'unauthenticated' | 'authenticated_no_role' | 'authenticated_with_role'>('loading');
+  const [status, setStatus] = useState('loading');
+  const [statusMessage, setStatusMessage] = useState('در حال بارگذاری و بررسی دسترسی...');
 
   useEffect(() => {
     if (isUserLoading || !firestore) {
-      setStatus('loading');
-      return;
+      return; // صبر کن تا کاربر و فایراستور آماده شوند
     }
 
+    // اگر کاربر وارد نشده بود
     if (!user) {
       setStatus('unauthenticated');
-      router.replace('/login');
+      // اگر در صفحه عمومی نبود، به صفحه لاگین هدایت کن
+      // این شرط برای جلوگیری از حلقه در صفحه لاگین است
+      if (!publicPaths.includes(window.location.pathname)) {
+        router.replace('/login');
+      } else {
+        setStatus('idle'); // در صفحات عمومی نیازی به نمایش لودر نیست
+      }
       return;
     }
-
+    
+    // اگر کاربر وارد شده بود
     const checkUserRole = async () => {
+      setStatusMessage('در حال بررسی نقش کاربر...');
       const userDocRef = doc(firestore, 'users', user.uid);
-      
-      // Special logic for super admin seeding
-      if (user.email === SUPER_ADMIN_EMAIL) {
-          const userDoc = await getDoc(userDocRef);
-          if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
-              await setDoc(userDocRef, { role: 'super_admin', email: user.email, uid: user.uid }, { merge: true });
-          }
-      }
+      let userDocSnap = await getDoc(userDocRef);
 
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists() && userDocSnap.data().role) {
+      // منطق اختصاص نقش سوپر ادمین
+      if (user.email === SUPER_ADMIN_EMAIL) {
+        if (!userDocSnap.exists() || userDocSnap.data()?.role !== 'super_admin') {
+          setStatusMessage('در حال اختصاص نقش سوپر ادمین...');
+          await setDoc(userDocRef, { role: 'super_admin', email: user.email, uid: user.uid }, { merge: true });
+          // پس از به‌روزرسانی، اطلاعات را مجدداً بخوان
+          userDocSnap = await getDoc(userDocRef);
+        }
+      }
+      
+      if (userDocSnap.exists() && userDocSnap.data()?.role) {
         setStatus('authenticated_with_role');
         router.replace('/dashboard');
       } else {
@@ -50,18 +62,20 @@ export default function RootPage() {
 
   }, [user, isUserLoading, router, firestore]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (auth) {
-        auth.signOut();
+      await auth.signOut();
+      router.replace('/login');
     }
   }
 
-  if (status === 'loading' || status === 'authenticated_with_role' || status === 'unauthenticated') {
+  // نمایش وضعیت‌های مختلف
+  if (status === 'loading' || (status === 'unauthenticated' && !publicPaths.includes(window.location.pathname))) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">در حال بارگذاری و بررسی دسترسی...</p>
+            <p className="text-muted-foreground">{statusMessage}</p>
         </div>
       </div>
     );
@@ -84,5 +98,6 @@ export default function RootPage() {
     )
   }
 
-  return null; // Should not be reached
+  // اگر در صفحات عمومی هستیم یا کاربر به داشبورد هدایت شده، چیزی نمایش نده
+  return null;
 }
