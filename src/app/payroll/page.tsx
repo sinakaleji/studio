@@ -168,7 +168,7 @@ export default function PayrollPage() {
     const baseSalary = parseFloat(String(selectedPersonnel.baseSalary)) || 0;
     const overtimeHours = Math.max(0, totalWorkHours - WORK_HOURS_PER_MONTH);
     const hourlyRate = baseSalary / WORK_HOURS_PER_MONTH;
-    const overtimePay = overtimeHours * hourlyRate * OVERTIME_RATE;
+    const overtimePay = parseFloat((overtimeHours * hourlyRate * OVERTIME_RATE).toFixed(0));
 
     // 3. Calculate Benefits
     const housingAllowance = parseFloat(String(payrollSettings.monthlyHousingAllowance)) || 0;
@@ -177,10 +177,10 @@ export default function PayrollPage() {
     const marriageAllowance = (selectedPersonnel.isMarried ? payrollSettings.marriageAllowance : 0) || 0;
     const seniorityPay = payrollSettings.monthlySeniorityBase || 0; // Assuming everyone gets it for simplicity
 
-    const totalEarnings = baseSalary + housingAllowance + foodAllowance + childAllowance + marriageAllowance + seniorityPay + overtimePay;
+    const totalEarnings = parseFloat((baseSalary + housingAllowance + foodAllowance + childAllowance + marriageAllowance + seniorityPay + overtimePay).toFixed(0));
 
     // 4. Calculate Deductions
-    const insuranceDeduction = totalEarnings * (payrollSettings.insuranceRate / 100);
+    const insuranceDeduction = parseFloat((totalEarnings * (payrollSettings.insuranceRate / 100)).toFixed(0));
     
     let taxDeduction = 0;
     const annualTaxableIncome = totalEarnings * 12;
@@ -195,28 +195,28 @@ export default function PayrollPage() {
         }
     });
 
-    taxDeduction = annualTax > 0 ? annualTax / 12 : 0;
+    taxDeduction = parseFloat((annualTax > 0 ? annualTax / 12 : 0).toFixed(0));
     
-    const totalDeductions = insuranceDeduction + taxDeduction;
-    const netPay = totalEarnings - totalDeductions;
+    const totalDeductions = parseFloat((insuranceDeduction + taxDeduction).toFixed(0));
+    const netPay = parseFloat((totalEarnings - totalDeductions).toFixed(0));
 
     // 5. Create Payroll Document
     const payrollData: Omit<Payroll, 'id' | 'payDate' | 'personnelName'> = {
       personnelId: data.personnelId,
       month: data.month,
-      baseSalary: parseFloat(baseSalary.toFixed(0)),
-      housingAllowance: parseFloat(housingAllowance.toFixed(0)),
-      foodAllowance: parseFloat(foodAllowance.toFixed(0)),
-      childAllowance: parseFloat(childAllowance.toFixed(0)),
-      marriageAllowance: parseFloat(marriageAllowance.toFixed(0)),
-      seniorityPay: parseFloat(seniorityPay.toFixed(0)),
+      baseSalary,
+      housingAllowance,
+      foodAllowance,
+      childAllowance,
+      marriageAllowance,
+      seniorityPay,
       overtimeHours: parseFloat(overtimeHours.toFixed(2)),
-      overtimePay: parseFloat(overtimePay.toFixed(0)),
-      totalEarnings: parseFloat(totalEarnings.toFixed(0)),
-      insuranceDeduction: parseFloat(insuranceDeduction.toFixed(0)),
-      taxDeduction: parseFloat(taxDeduction.toFixed(0)),
-      totalDeductions: parseFloat(totalDeductions.toFixed(0)),
-      netPay: parseFloat(netPay.toFixed(0)),
+      overtimePay,
+      totalEarnings,
+      insuranceDeduction,
+      taxDeduction,
+      totalDeductions,
+      netPay,
     };
     
     const finalDoc = { ...payrollData, payDate: serverTimestamp() };
