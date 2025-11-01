@@ -24,19 +24,25 @@ function AuthGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
       if (isUserLoading || !firestore) {
-          // Wait for user and firestore to be available
-          return;
+        return; // Wait for user and firestore to be available
       }
 
       if (user) {
         // User is logged in, check their role.
         const userDocRef = doc(firestore, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        const userRole = userDocSnap.exists() ? userDocSnap.data().role : null;
+        let userDocSnap = await getDoc(userDocRef);
+        let userRole = userDocSnap.exists() ? userDocSnap.data().role : null;
+        
+        // SPECIAL FIX: Assign super_admin role if not present for the specific email
+        if (user.email === 'sinakaleji@gmail.com' && userRole !== 'super_admin') {
+            await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
+            // Re-fetch the doc to get the updated role
+            userDocSnap = await getDoc(userDocRef);
+            userRole = userDocSnap.data()?.role;
+        }
 
         if (userRole) {
           // User has a role, they can access protected pages.
-          // If they are on a public page, redirect to dashboard.
           if (publicPaths.includes(pathname) || pathname === '/') {
             router.replace('/dashboard');
           }
@@ -48,7 +54,6 @@ function AuthGuard({ children }: { children: ReactNode }) {
         }
       } else {
         // User is not logged in.
-        // If not on a public page, redirect to login.
         if (!publicPaths.includes(pathname)) {
           router.replace('/login');
         }
@@ -83,32 +88,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
         }
     }
     setup();
-  }, [firebaseServices]);
-
-  // Temporary effect to fix the super_admin role assignment
-  useEffect(() => {
-    const { auth, firestore } = firebaseServices;
-    if (auth && firestore) {
-      // onAuthStateChanged returns an unsubscribe function.
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user && user.email === 'sinakaleji@gmail.com') {
-          const userDocRef = doc(firestore, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
-            try {
-              await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
-              console.log("Successfully assigned super_admin role to sinakaleji@gmail.com");
-            } catch (e) {
-              console.error("Failed to assign super_admin role:", e);
-            }
-          }
-        }
-      });
-      
-      // The cleanup function is returned by useEffect.
-      // It's called when the component unmounts or before the effect re-runs.
-      return () => unsubscribe();
-    }
   }, [firebaseServices]);
 
   return (
