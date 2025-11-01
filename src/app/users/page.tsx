@@ -84,7 +84,7 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permissionsOpen, setPermissionsOpen] = useState(false);
 
-  const { firestore, auth: mainAuth } = useFirebase();
+  const { firestore, auth } = useFirebase();
   const { toast } = useToast();
 
   const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, []);
@@ -127,13 +127,13 @@ export default function UsersPage() {
   };
 
   const onAddSubmit = async (data: UserFormData) => {
-      if (!mainAuth || !firestore) {
+      if (!auth || !firestore) {
           toast({ variant: 'destructive', title: 'خطا', description: 'سرویس Firebase در دسترس نیست.' });
           return;
       };
       setIsSubmitting(true);
       try {
-        const userCredential = await createUserWithEmailAndPassword(mainAuth, data.email, data.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         const user = userCredential.user;
 
         await setDoc(doc(firestore, 'users', user.uid), {
@@ -369,5 +369,3 @@ export default function UsersPage() {
     </AppLayout>
   );
 }
-
-    

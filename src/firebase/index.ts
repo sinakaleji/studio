@@ -48,4 +48,4 @@ export * from './errors';
 export * from './error-emitter';
 
 // Re-exporting auth functions for convenience
-export { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+export { signInWithEmailAndPassword } from 'firebase/auth';
