@@ -6,8 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EstateSettings from './_components/estate-settings';
 import PayrollSettings from './_components/payroll-settings';
+import IntegrationSettings from './_components/integration-settings';
+import { useUser } from '@/firebase';
+
 
 export default function SettingsPage() {
+  const { user, isUserLoading } = useUser();
+  // We need to fetch the user's role from the user document in firestore
+  // For now, let's assume we have a way to get the role.
+  // This is a simplified check. In a real app you'd fetch the user's profile.
+  const userRole = 'super_admin'; // Placeholder, replace with actual role fetching
+
   return (
     <AppLayout>
       <Header title="تنظیمات" />
@@ -16,6 +25,9 @@ export default function SettingsPage() {
           <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto">
             <TabsTrigger value="estate">اطلاعات شهرک</TabsTrigger>
             <TabsTrigger value="payroll">تنظیمات حقوق و دستمزد</TabsTrigger>
+             {userRole === 'super_admin' && (
+               <TabsTrigger value="integrations">یکپارچه‌سازی</TabsTrigger>
+             )}
           </TabsList>
           <TabsContent value="estate">
             <Card>
@@ -41,6 +53,21 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+          {userRole === 'super_admin' && (
+            <TabsContent value="integrations">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>تنظیمات یکپارچه‌سازی</CardTitle>
+                        <CardDescription>
+                            API Key و اطلاعات مربوط به سرویس‌های خارجی مانند ایمیل و پیامک را مدیریت کنید.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <IntegrationSettings />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </AppLayout>

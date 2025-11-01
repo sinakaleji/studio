@@ -26,6 +26,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
 
 const userRoleSchema = z.object({
   role: z.enum(['super_admin', 'admin', 'financial_expert'], {
@@ -71,13 +73,22 @@ export default function UsersPage() {
     setEditingUser(null);
   };
   
-  const getRoleVariant = (role: User['role']) => {
+  const getRoleVariant = (role: User['role']): 'destructive' | 'default' | 'secondary' | 'outline' => {
     switch (role) {
         case 'super_admin': return 'destructive';
         case 'admin': return 'default';
         case 'financial_expert': return 'secondary';
         default: return 'outline';
     }
+  }
+  
+  const getRoleDisplayName = (role: User['role']) => {
+      switch (role) {
+          case 'super_admin': return 'سوپر ادمین';
+          case 'admin': return 'ادمین';
+          case 'financial_expert': return 'کارشناس مالی';
+          default: return 'بدون نقش';
+      }
   }
 
   return (
@@ -113,11 +124,11 @@ export default function UsersPage() {
                         <Avatar className="h-9 w-9">
                           <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        {user.displayName || 'بدون نام'}
+                        {user.displayName || user.email}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant={getRoleVariant(user.role)}>{user.role || 'بدون نقش'}</Badge>
+                        <Badge variant={getRoleVariant(user.role)}>{getRoleDisplayName(user.role)}</Badge>
                       </TableCell>
                       <TableCell>
                         <Button variant="outline" size="icon" onClick={() => handleEdit(user)}>
@@ -156,9 +167,9 @@ export default function UsersPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="financial_expert">Financial Expert</SelectItem>
+                        <SelectItem value="super_admin">سوپر ادمین</SelectItem>
+                        <SelectItem value="admin">ادمین</SelectItem>
+                        <SelectItem value="financial_expert">کارشناس مالی</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

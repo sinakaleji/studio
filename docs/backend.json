@@ -366,6 +366,39 @@
         }
       },
       "required": ["id", "insuranceRate", "taxBrackets", "monthlyHousingAllowance", "monthlyFoodAllowance"]
+    },
+    "IntegrationSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IntegrationSettings",
+      "type": "object",
+      "description": "Stores API keys and settings for third-party integrations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier, should be a fixed value like 'default'."
+        },
+        "kavenegarApiKey": {
+          "type": "string",
+          "description": "API Key for Kavenegar SMS service."
+        },
+        "gmailSmtpHost": {
+          "type": "string",
+          "description": "Hostname for Gmail SMTP server."
+        },
+        "gmailSmtpPort": {
+          "type": "number",
+          "description": "Port for Gmail SMTP server."
+        },
+        "gmailSmtpUser": {
+          "type": "string",
+          "description": "Username for Gmail SMTP authentication."
+        },
+        "gmailSmtpPass": {
+          "type": "string",
+          "description": "Password or App Password for Gmail SMTP authentication."
+        }
+      },
+      "required": ["id"]
     }
   },
   "auth": {
@@ -413,6 +446,10 @@
     "/payroll_settings/{settingId}": {
         "schema": { "$ref": "#/backend/entities/PayrollSettings" },
         "description": "Stores global payroll settings like tax and insurance rates."
+    },
+    "/integration_settings/{settingId}": {
+        "schema": { "$ref": "#/backend/entities/IntegrationSettings" },
+        "description": "Stores API keys for third-party integrations. Restricted to super_admin."
     }
   }
 }

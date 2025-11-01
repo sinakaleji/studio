@@ -62,9 +62,11 @@ service cloud.firestore {
      * - Only Super Admins can create, update, or delete user profiles.
      */
     match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow list: if isSuperAdmin();
       allow write: if isSuperAdmin();
+      // A user can create their own document on signup
+      allow create: if isSignedIn() && request.auth.uid == userId;
     }
 
     /**
@@ -98,10 +100,18 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin() || isAdmin() || isFinancialExpert();
     }
     match /payrolls/{payrollId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read, write: if isSuperAdmin() || isAdmin() || isFinancialExpert();
     }
     match /payroll_settings/{settingId} {
       allow read, write: if isSuperAdmin() || isAdmin();
+    }
+    
+    /**
+     * @description Integration Settings Collection
+     * - ONLY Super Admins have read/write access.
+     */
+    match /integration_settings/{settingId} {
+      allow read, write: if isSuperAdmin();
     }
   }
 }
