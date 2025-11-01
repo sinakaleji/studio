@@ -46,14 +46,15 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
+      if (!auth || !firestore) {
+          throw new Error('Firebase not initialized');
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      // Determine the role based on the email address.
-      // This is a simple and direct way to seed the first super admin.
       const role = data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : null;
 
-      // Create a user profile document in Firestore with the determined role.
       await setDoc(doc(firestore, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
@@ -62,9 +63,9 @@ export default function SignupPage() {
 
       toast({
         title: 'ثبت‌نام موفق',
-        description: 'حساب کاربری شما ایجاد شد. لطفاً منتظر تایید مدیر سیستم بمانید.',
+        description: role === 'super_admin' ? 'حساب شما با دسترسی کامل ایجاد شد.' : 'حساب کاربری شما ایجاد شد. لطفاً منتظر تایید مدیر سیستم بمانید.',
       });
-      // Redirect is handled by AuthGuard after user state changes
+      // Redirect is handled by the root page /
     } catch (error) {
       let description = 'مشکلی در هنگام ثبت‌نام به وجود آمد.';
       if (error instanceof FirebaseError) {

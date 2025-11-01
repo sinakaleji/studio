@@ -1,12 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useUser, useFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser();
@@ -21,7 +19,6 @@ export default function RootPage() {
     }
 
     if (!user) {
-      setStatus('unauthenticated');
       router.replace('/login');
       return;
     }
@@ -31,36 +28,7 @@ export default function RootPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       
       try {
-        let userDocSnap = await getDoc(userDocRef);
-
-        if (user.email === SUPER_ADMIN_EMAIL) {
-          if (!userDocSnap.exists() || userDocSnap.data()?.role !== 'super_admin') {
-            setStatusMessage('در حال اختصاص نقش سوپر ادمین...');
-            const userData = { role: 'super_admin', email: user.email, uid: user.uid };
-            
-            setDoc(userDocRef, userData, { merge: true })
-              .then(async () => {
-                 const updatedSnap = await getDoc(userDocRef);
-                 if (updatedSnap.exists() && updatedSnap.data()?.role) {
-                    setStatus('authenticated_with_role');
-                    router.replace('/dashboard');
-                  } else {
-                     setStatus('authenticated_no_role');
-                  }
-              })
-              .catch(error => {
-                const contextualError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'write',
-                  requestResourceData: userData,
-                });
-                errorEmitter.emit('permission-error', contextualError);
-                setStatus('permission_denied');
-                setStatusMessage('خطا در اختصاص دسترسی. لطفاً با مدیر سیستم تماس بگیرید.');
-              });
-            return;
-          }
-        }
+        const userDocSnap = await getDoc(userDocRef);
         
         if (userDocSnap.exists() && userDocSnap.data()?.role) {
           setStatus('authenticated_with_role');

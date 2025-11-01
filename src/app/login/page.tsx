@@ -37,7 +37,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      // Redirect is handled by AuthGuard
+      // Redirect is handled by the root page /
     } catch (error) {
       let description = 'مشکلی در هنگام ورود به وجود آمد.';
       if (error instanceof FirebaseError) {
