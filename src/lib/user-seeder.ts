@@ -1,56 +1,49 @@
 'use server';
 
-import { Auth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { Auth } from 'firebase/auth';
 import { Firestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
+// The password is not needed if the user is already created, but we keep it for reference.
 const SUPER_ADMIN_PASSWORD = 'Sina4694'; 
 
 export async function seedSuperAdmin(auth: Auth, firestore: Firestore) {
   try {
-    // 1. Check if the super admin user already exists by email in Firestore
+    // Check if a user document with the super_admin role already exists for this email.
     const usersRef = collection(firestore, 'users');
     const q = query(usersRef, where('email', '==', SUPER_ADMIN_EMAIL));
     const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-      console.log(`Super admin with email ${SUPER_ADMIN_EMAIL} not found in Firestore. Proceeding to create...`);
-      
-      // 2. Create the user in Firebase Auth. This also signs the user in.
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD);
-        const user = userCredential.user;
-        console.log('Super admin created in Auth, UID:', user.uid);
+    let superAdminDocExists = false;
+    let userIdToUpdate: string | null = null;
 
-        // 3. Create the user profile in Firestore with the 'super_admin' role
-        await setDoc(doc(firestore, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          role: 'super_admin',
-          displayName: 'Super Admin'
-        });
-        console.log('Super admin profile created in Firestore with role.');
-
-        // 4. IMPORTANT: Sign the temporary user out immediately.
-        // This prevents the auth state from being prematurely picked up by the client provider
-        // before the app is fully ready, which can cause redirect loops.
-        // The user will then log in normally through the login page.
-        await auth.signOut();
-        console.log('Temporary super admin creation session signed out.');
-
-      } catch (error: any) {
-         if (error.code === 'auth/email-already-in-use') {
-            console.log(`Auth user with email ${SUPER_ADMIN_EMAIL} already exists, but Firestore doc might be missing or was deleted. This state is unusual but can be recovered from if the user logs in.`);
-         } else if (error.code === 'auth/weak-password') {
-            console.error('Super admin password is too weak. Please use a stronger password.');
-         }
-         else {
-            console.error('Error creating super admin user in Auth:', error);
-         }
+    querySnapshot.forEach(doc => {
+      userIdToUpdate = doc.id;
+      if (doc.data().role === 'super_admin') {
+        superAdminDocExists = true;
       }
-    } else {
-    //   console.log('Super admin already exists. Seeding skipped.');
+    });
+
+    if (superAdminDocExists) {
+      // console.log('Super admin already exists and has the correct role. Seeding skipped.');
+      return;
     }
+
+    if (userIdToUpdate) {
+      // The user exists in Firestore, but doesn't have the super_admin role. Let's give it to them.
+      console.log(`User with email ${SUPER_ADMIN_EMAIL} found in Firestore. Updating role to super_admin...`);
+      const userDocRef = doc(firestore, 'users', userIdToUpdate);
+      await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
+      console.log('Super admin role updated successfully.');
+    } else {
+        // This block is for a rare case where the user exists in Auth but not in Firestore at all.
+        // We can't get user by email from client Auth SDK, so we rely on the user logging in,
+        // which will trigger the creation of their user doc in Firestore via the signup/login flow.
+        // The safest approach is to let the user log in. After they log in, their user doc will be created
+        // with `role: null`. Then, on the next app load, the logic above will assign them the super_admin role.
+        console.log(`No user document found for ${SUPER_ADMIN_EMAIL} in Firestore. The user should log in once to create their profile, and the role will be assigned on the next session.`);
+    }
+
   } catch (error) {
     console.error('Error during super admin seeding process:', error);
   }
