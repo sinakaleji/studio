@@ -19,8 +19,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCollection, useDoc, useFirebase } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp, doc, where, query, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, where, query, getDocs, Timestamp, addDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -201,9 +200,10 @@ export default function PayrollPage() {
         const totalDeductions = insuranceDeduction + taxDeduction;
         const netPay = totalEarnings - totalDeductions;
 
-        const payrollData: Omit<Payroll, 'id' | 'payDate' | 'personnelName'> = {
+        const payrollData: Omit<Payroll, 'id' | 'personnelName'> = {
           personnelId: data.personnelId,
           month: data.month,
+          payDate: serverTimestamp(),
           baseSalary,
           housingAllowance,
           foodAllowance,
@@ -219,8 +219,7 @@ export default function PayrollPage() {
           netPay: parseFloat(netPay.toFixed(0)),
         };
         
-        const finalDoc = { ...payrollData, payDate: serverTimestamp() };
-        await addDocumentNonBlocking(collection(firestore, 'payrolls'), finalDoc);
+        await addDoc(collection(firestore, 'payrolls'), payrollData);
 
         toast({ title: 'موفقیت‌آمیز', description: 'فیش حقوقی جدید با موفقیت محاسبه و ثبت شد.' });
     } catch (error) {

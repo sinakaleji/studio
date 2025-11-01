@@ -19,9 +19,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirebase } from '@/firebase';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp, doc, Timestamp, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp, doc, Timestamp, query, orderBy, addDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -129,7 +128,7 @@ export default function DocumentsPage() {
         relatedEntityName: getEntityName(data.relatedEntityType, data.relatedEntityId),
       };
 
-      addDocumentNonBlocking(collection(firestore, 'documents'), documentData);
+      await addDoc(collection(firestore, 'documents'), documentData);
 
       toast({
         title: 'موفقیت‌آمیز',
