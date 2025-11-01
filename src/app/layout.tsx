@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import RootPage from './page';
 
 export const metadata: Metadata = {
   title: 'Sina Estate Manager',
@@ -23,7 +22,6 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <FirebaseClientProvider>
-            <RootPage />
             {children}
         </FirebaseClientProvider>
         <Toaster />
