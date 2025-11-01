@@ -87,28 +87,28 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   // Temporary effect to fix the super_admin role assignment
   useEffect(() => {
-    const fixSuperAdmin = async () => {
-      const { auth, firestore } = firebaseServices;
-      if (auth && firestore) {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-          if (user && user.email === 'sinakaleji@gmail.com') {
-            const userDocRef = doc(firestore, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
-              try {
-                await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
-                console.log("Successfully assigned super_admin role to sinakaleji@gmail.com");
-              } catch (e) {
-                console.error("Failed to assign super_admin role:", e);
-              }
+    const { auth, firestore } = firebaseServices;
+    if (auth && firestore) {
+      // onAuthStateChanged returns an unsubscribe function.
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user && user.email === 'sinakaleji@gmail.com') {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
+            try {
+              await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
+              console.log("Successfully assigned super_admin role to sinakaleji@gmail.com");
+            } catch (e) {
+              console.error("Failed to assign super_admin role:", e);
             }
           }
-        });
-        return () => unsubscribe();
-      }
-    };
-
-    fixSuperAdmin();
+        }
+      });
+      
+      // The cleanup function is returned by useEffect.
+      // It's called when the component unmounts or before the effect re-runs.
+      return () => unsubscribe();
+    }
   }, [firebaseServices]);
 
   return (
