@@ -2,19 +2,33 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Represents an application user with specific roles.",
+      "description": "Represents an application user with a specific role.",
       "type": "object",
       "properties": {
         "uid": { "type": "string", "description": "Firebase Authentication user ID." },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
-        "role": {
+        "roleId": {
           "type": "string",
-          "enum": ["super_admin", "admin", "financial_expert"],
-          "description": "The role of the user, which determines their access level."
+          "description": "The ID of the role assigned to the user (e.g., 'super_admin', 'admin')."
         }
       },
-      "required": ["uid", "email", "role"]
+      "required": ["uid", "email", "roleId"]
+    },
+    "Role": {
+        "title": "Role",
+        "description": "Defines a role and its associated permissions.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string", "description": "The unique identifier for the role (e.g., 'super_admin')." },
+            "name": { "type": "string", "description": "The display name of the role (e.g., 'Super Admin')." },
+            "permissions": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "A list of permission keys assigned to this role."
+            }
+        },
+        "required": ["id", "name", "permissions"]
     },
     "Estate": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -424,6 +438,10 @@
       "schema": { "$ref": "#/backend/entities/User" },
       "description": "Stores application user profiles and their roles."
     },
+    "/roles/{roleId}": {
+        "schema": { "$ref": "#/backend/entities/Role" },
+        "description": "Stores role definitions and their associated permissions."
+    },
     "/estates/{estateId}": {
       "schema": { "$ref": "#/backend/entities/Estate" },
       "description": "Stores general estate information. Should contain a single document with a fixed ID for main settings."
@@ -466,3 +484,5 @@
     }
   }
 }
+
+    

@@ -56,18 +56,18 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      const role = data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : null;
+      const roleId = data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : null;
 
       await setDoc(doc(firestore, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: data.displayName,
-        role: role,
+        roleId: roleId,
       });
 
       toast({
         title: 'ثبت‌نام موفق',
-        description: role === 'super_admin' ? 'حساب شما با دسترسی کامل ایجاد شد. لطفاً وارد شوید.' : 'حساب شما ایجاد شد. لطفاً منتظر تایید مدیر بمانید.',
+        description: roleId === 'super_admin' ? 'حساب شما با دسترسی کامل ایجاد شد. لطفاً وارد شوید.' : 'حساب شما ایجاد شد. لطفاً منتظر تایید مدیر بمانید.',
       });
       // Redirect is handled by the root page /
     } catch (error) {
@@ -166,3 +166,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    

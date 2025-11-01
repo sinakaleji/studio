@@ -30,13 +30,13 @@ export default function RootPage() {
       try {
         const userDocSnap = await getDoc(userDocRef);
         
-        if (user.email === 'sinakaleji@gmail.com' && (!userDocSnap.exists() || userDocSnap.data()?.role !== 'super_admin')) {
-            await setDoc(userDocRef, { uid: user.uid, email: user.email, role: 'super_admin' }, { merge: true });
+        if (user.email === 'sinakaleji@gmail.com' && (!userDocSnap.exists() || userDocSnap.data()?.roleId !== 'super_admin')) {
+            await setDoc(userDocRef, { uid: user.uid, email: user.email, roleId: 'super_admin' }, { merge: true });
             router.replace('/dashboard');
             return;
         }
         
-        if (userDocSnap.exists() && userDocSnap.data()?.role) {
+        if (userDocSnap.exists() && userDocSnap.data()?.roleId) {
           setStatus('authenticated_with_role');
           router.replace('/dashboard');
         } else {
@@ -101,3 +101,5 @@ export default function RootPage() {
       </div>
   );
 }
+
+    

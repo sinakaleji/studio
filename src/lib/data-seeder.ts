@@ -59,6 +59,55 @@ const payrollSettingsData = {
 };
 const PAYROLL_SETTINGS_DOC_ID = 'default';
 
+const allPermissions = [
+    { id: 'view_dashboard', label: 'مشاهده داشبورد' },
+    { id: 'manage_villas', label: 'مدیریت ویلاها' },
+    { id: 'manage_stakeholders', label: 'مدیریت ذی‌نفعان' },
+    { id: 'manage_personnel', label: 'مدیریت پرسنل' },
+    { id: 'manage_attendance', label: 'مدیریت حضور و غیاب' },
+    { id: 'view_finance', label: 'مشاهده امور مالی' },
+    { id: 'manage_finance', label: 'مدیریت امور مالی' },
+    { id: 'view_payroll', label: 'مشاهده حقوق و دستمزد' },
+    { id: 'manage_payroll', label: 'مدیریت حقوق و دستمزد' },
+    { id: 'manage_documents', label: 'مدیریت مدارک' },
+    { id: 'manage_users', label: 'مدیریت کاربران' },
+    { id: 'manage_settings', label: 'مدیریت تنظیمات' },
+];
+
+const rolesData = [
+    { 
+        id: 'super_admin', 
+        name: 'سوپر ادمین', 
+        permissions: allPermissions.map(p => p.id) 
+    },
+    { 
+        id: 'admin', 
+        name: 'ادمین', 
+        permissions: [
+            'view_dashboard', 
+            'manage_villas', 
+            'manage_stakeholders', 
+            'manage_personnel', 
+            'manage_attendance', 
+            'view_finance',
+            'view_payroll',
+            'manage_documents', 
+            'manage_settings'
+        ] 
+    },
+    { 
+        id: 'financial_expert', 
+        name: 'کارشناس مالی', 
+        permissions: [
+            'view_dashboard', 
+            'view_finance', 
+            'manage_finance', 
+            'view_payroll',
+            'manage_payroll'
+        ] 
+    },
+];
+
 async function seedCollection(firestore: Firestore, collectionName: string, data: any[], idField?: keyof any) {
   const collectionRef = collection(firestore, collectionName);
   const snapshot = await getDocs(collectionRef);
@@ -107,6 +156,7 @@ export async function seedDatabase(firestore: Firestore) {
         await Promise.all([
             seedCollection(firestore, 'stakeholders', stakeholdersData, 'id'),
             seedCollection(firestore, 'personnel', personnelData, 'id'),
+            seedCollection(firestore, 'roles', rolesData, 'id'),
         ]);
         
         await Promise.all([
@@ -119,3 +169,5 @@ export async function seedDatabase(firestore: Firestore) {
         console.error("Error seeding database: ", error);
     }
 }
+
+    

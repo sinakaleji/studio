@@ -2,9 +2,10 @@
  * @file Firebase Security Rules for Sina Estate Manager.
  *
  * Core Philosophy:
- * This ruleset implements Role-Based Access Control (RBAC).
- * Access is default-denied and then selectively granted based on the user's role,
- * which is stored in the /users/{userId} document.
+ * This ruleset implements a dynamic Role-Based Access Control (RBAC).
+ * Access is default-denied and then selectively granted based on the permissions
+ * assigned to a user's role. A user's role is stored in /users/{userId}.
+ * The permissions for each role are stored in /roles/{roleId}.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -20,34 +21,52 @@ service cloud.firestore {
     }
 
     /**
-     * @description Gets the user's role from their profile document in the 'users' collection.
-     * Caches the result per request.
+     * @description Gets the user's role ID from their profile document.
      */
-    function getRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    function getUserRoleId(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.roleId;
     }
 
     /**
-     * @description Checks if the signed-in user has the 'super_admin' role.
+     * @description Gets the list of permissions for a given role ID.
      */
-    function isSuperAdmin() {
-      return isSignedIn() && getRole(request.auth.uid) == 'super_admin';
+    function getRolePermissions(roleId) {
+      return get(/databases/$(database)/documents/roles/$(roleId)).data.permissions;
     }
 
     /**
-     * @description Checks if the signed-in user has the 'admin' role.
+     * @description Checks if the currently signed-in user has a specific permission.
+     * Caches role and permissions data per request.
      */
-    function isAdmin() {
-      return isSignedIn() && getRole(request.auth.uid) == 'admin';
+    function hasPermission(permission) {
+      if (!isSignedIn()) {
+        return false;
+      }
+      let roleId = getUserRoleId(request.auth.uid);
+      if (roleId == null) {
+        return false;
+      }
+      // The 'super_admin' role has all permissions implicitly.
+      if (roleId == 'super_admin') {
+          return true;
+      }
+      let permissions = getRolePermissions(roleId);
+      return permission in permissions;
+    }
+
+    /**
+     * @description Checks if the user has any of the specified read permissions.
+     */
+    function canRead(resourceName) {
+        return hasPermission('view_' + resourceName) || hasPermission('manage_' + resourceName);
     }
     
     /**
-     * @description Checks if the signed-in user has the 'financial_expert' role.
+     * @description Checks if the user has the specific write/manage permission.
      */
-    function isFinancialExpert() {
-        return isSignedIn() && getRole(request.auth.uid) == 'financial_expert';
+    function canWrite(resourceName) {
+        return hasPermission('manage_' + resourceName);
     }
-
 
     // DEFAULT-DENY ALL
     match /{document=**} {
@@ -58,61 +77,78 @@ service cloud.firestore {
     
     /**
      * @description Users Collection
-     * - Any signed-in user can read their own profile.
-     * - Only Super Admins can create, update, or delete user profiles.
+     * - A user can read their own profile.
+     * - Users with 'manage_users' permission can read/list/write other users.
      */
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow list: if isSuperAdmin();
-      allow update: if isSuperAdmin() || (request.auth.uid == userId && request.resource.data.keys().hasOnly(['displayName']));
-      allow delete: if isSuperAdmin();
-      // A user can create their own document on signup
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || hasPermission('manage_users'));
+      allow list, update, delete: if hasPermission('manage_users');
+      // A user can create their own document on signup or be created by an admin.
+      allow create: if isSignedIn() && (request.auth.uid == userId || hasPermission('manage_users'));
+    }
+    
+    /**
+     * @description Roles Collection
+     * - Only users with 'manage_users' permission can read and write roles.
+     */
+    match /roles/{roleId} {
+        allow read, write: if hasPermission('manage_users');
     }
 
     /**
-     * @description General Collections (Villas, Personnel, Stakeholders, etc.)
-     * - Super Admins and Admins have full read/write access.
+     * @description General Data Collections
+     * - Access is determined by dynamic permissions for each resource.
      */
     match /villas/{villaId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('villas');
+      allow write: if canWrite('villas');
     }
     match /personnel/{personnelId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('personnel');
+      allow write: if canWrite('personnel');
     }
     match /stakeholders/{stakeholderId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('stakeholders');
+      allow write: if canWrite('stakeholders');
     }
     match /documents/{documentId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('documents');
+      allow write: if canWrite('documents');
     }
     match /estates/{estateId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('settings');
+      allow write: if canWrite('settings');
     }
     match /attendances/{attendanceId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('attendance');
+      allow write: if canWrite('attendance');
     }
 
     /**
      * @description Financial & Payroll Collections
-     * - Super Admins, Admins, and Financial Experts have read/write access.
+     * - Access is determined by dynamic permissions.
      */
     match /financial_transactions/{transactionId} {
-      allow read, write: if isSuperAdmin() || isAdmin() || isFinancialExpert();
+      allow read: if canRead('finance');
+      allow write: if canWrite('finance');
     }
     match /payrolls/{payrollId} {
-      allow read, write: if isSuperAdmin() || isAdmin() || isFinancialExpert();
+      allow read: if canRead('payroll');
+      allow write: if canWrite('payroll');
     }
     match /payroll_settings/{settingId} {
-      allow read, write: if isSuperAdmin() || isAdmin();
+      allow read: if canRead('settings');
+      allow write: if canWrite('settings');
     }
     
     /**
      * @description Integration Settings Collection
-     * - ONLY Super Admins have read/write access.
+     * - ONLY Super Admins have access (hardcoded as a safeguard).
      */
     match /integration_settings/{settingId} {
-      allow read, write: if isSuperAdmin();
+      allow read, write: if getUserRoleId(request.auth.uid) == 'super_admin';
     }
   }
 }
+
+    
