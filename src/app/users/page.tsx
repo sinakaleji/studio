@@ -87,7 +87,9 @@ export default function UsersPage() {
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    roleForm.reset({ role: user.role ?? undefined });
+    if (user.role) {
+      roleForm.reset({ role: user.role });
+    }
     setIsEditDialogOpen(true);
   };
   
@@ -111,7 +113,6 @@ export default function UsersPage() {
       };
       setIsSubmitting(true);
       try {
-        // Note: This creates a new user in the primary Firebase Auth instance.
         const userCredential = await createUserWithEmailAndPassword(mainAuth, data.email, data.password);
         const user = userCredential.user;
 
