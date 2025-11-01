@@ -83,6 +83,8 @@ export default function PayrollPage() {
     resolver: zodResolver(payrollSchema),
     defaultValues: { personnelId: '', month: '' },
   });
+  
+  const { setValue, getValues } = form;
 
   const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
   const { data: personnel, isLoading: isLoadingPersonnel } = useCollection<Personnel>(personnelQuery);
@@ -123,10 +125,10 @@ export default function PayrollPage() {
   }, []);
 
   useEffect(() => {
-    if (months.length > 0 && !form.getValues('month')) {
-      form.setValue('month', months[0].value);
+    if (months.length > 0 && !getValues('month')) {
+      setValue('month', months[0].value);
     }
-  }, [months, form]);
+  }, [months, setValue, getValues]);
 
 
   const calculatePayroll = async (data: PayrollFormData) => {
