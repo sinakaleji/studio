@@ -27,14 +27,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 
 const documentSchema = z.object({
   fileName: z.string().min(1, 'نام فایل الزامی است'),
   file: z.instanceof(FileList).refine(files => files?.length > 0, 'فایل الزامی است'),
+  relatedEntityType: z.enum(['general', 'villa', 'personnel', 'stakeholder'], { required_error: 'انتخاب نوع ارتباط الزامی است'}),
+  relatedEntityId: z.string().optional(),
 });
 
 type DocumentFormData = z.infer<typeof documentSchema>;
+
+type Villa = { id: string, villaNumber: string };
+type Personnel = { id: string, firstName: string, lastName: string };
+type Stakeholder = { id: string, name: string };
 type Document = {
     id: string;
     fileName: string;
@@ -42,6 +50,9 @@ type Document = {
     uploadDate: Timestamp;
     fileUrl: string;
     storagePath: string;
+    relatedEntityType?: 'general' | 'villa' | 'personnel' | 'stakeholder';
+    relatedEntityId?: string;
+    relatedEntityName?: string;
 };
 
 export default function DocumentsPage() {
@@ -55,18 +66,49 @@ export default function DocumentsPage() {
     resolver: zodResolver(documentSchema),
     defaultValues: {
       fileName: '',
+      relatedEntityType: 'general',
+      relatedEntityId: '',
     },
   });
+  const selectedEntityType = form.watch('relatedEntityType');
+
 
   const documentsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'documents'), orderBy('uploadDate', 'desc'));
   }, [firestore]);
 
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
+  const personnelQuery = useMemoFirebase(() => firestore ? collection(firestore, 'personnel') : null, [firestore]);
+  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
+
   const { data: documents, isLoading } = useCollection<Document>(documentsQuery);
+  const { data: villas } = useCollection<Villa>(villasQuery);
+  const { data: personnel } = useCollection<Personnel>(personnelQuery);
+  const { data: stakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
+
+  const getEntityName = (type?: string, id?: string) => {
+    if (!type || !id || type === 'general') return 'عمومی';
+    switch (type) {
+      case 'villa':
+        return villas?.find(v => v.id === id)?.villaNumber || id;
+      case 'personnel':
+        const p = personnel?.find(p => p.id === id);
+        return p ? `${p.firstName} ${p.lastName}` : id;
+      case 'stakeholder':
+        return stakeholders?.find(s => s.id === id)?.name || id;
+      default:
+        return 'نامشخص';
+    }
+  }
 
   const onSubmit = async (data: DocumentFormData) => {
     if (!firestore) return;
+    if (data.relatedEntityType !== 'general' && !data.relatedEntityId) {
+        toast({ variant: 'destructive', title: 'خطا', description: 'لطفا آیتم مرتبط را انتخاب کنید.' });
+        return;
+    }
+    
     setIsUploading(true);
     const file = data.file[0];
     const storagePath = `documents/${Date.now()}_${file.name}`;
@@ -82,6 +124,9 @@ export default function DocumentsPage() {
         fileUrl: downloadURL,
         storagePath: storagePath,
         uploadDate: serverTimestamp(),
+        relatedEntityType: data.relatedEntityType,
+        relatedEntityId: data.relatedEntityId,
+        relatedEntityName: getEntityName(data.relatedEntityType, data.relatedEntityId),
       };
 
       addDocumentNonBlocking(collection(firestore, 'documents'), documentData);
@@ -136,7 +181,7 @@ export default function DocumentsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>آرشیو مدارک</CardTitle>
-                    <CardDescription>بارگذاری، مشاهده و مدیریت مدارک</CardDescription>
+                    <CardDescription>بارگذاری، مشاهده و مدیریت مدارک مرتبط با شهرک</CardDescription>
                 </div>
                 <Button onClick={() => setIsDialogOpen(true)}>
                     <PlusCircle className="ml-2 h-4 w-4" />
@@ -155,7 +200,7 @@ export default function DocumentsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>نام مدرک</TableHead>
-                            <TableHead>نوع فایل</TableHead>
+                            <TableHead>مربوط به</TableHead>
                             <TableHead>تاریخ بارگذاری</TableHead>
                             <TableHead>عملیات</TableHead>
                         </TableRow>
@@ -168,9 +213,9 @@ export default function DocumentsPage() {
                                     {docItem.fileName}
                                 </TableCell>
                                 <TableCell>
-                                    <span className="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground">
-                                        {docItem.fileType}
-                                    </span>
+                                    <Badge variant={docItem.relatedEntityType === 'general' ? 'secondary' : 'default'}>
+                                        {docItem.relatedEntityName || 'عمومی'}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
                                     {docItem.uploadDate ? new Date(docItem.uploadDate.seconds * 1000).toLocaleDateString('fa-IR') : '...'}
@@ -209,11 +254,14 @@ export default function DocumentsPage() {
             </CardContent>
         </Card>
       </main>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isDialogOpen} onOpenChange={(isOpen) => {
+          setIsDialogOpen(isOpen);
+          if (!isOpen) form.reset();
+      }}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>بارگذاری مدرک جدید</DialogTitle>
-            <DialogDescription>فایل مدرک را انتخاب کرده و یک نام برای آن تعیین کنید.</DialogDescription>
+            <DialogDescription>فایل مدرک و اطلاعات مربوط به آن را مشخص کنید.</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -230,6 +278,70 @@ export default function DocumentsPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                  control={form.control}
+                  name="relatedEntityType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مربوط به</FormLabel>
+                      <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue('relatedEntityId', '');
+                      }} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید که مدرک مربوط به چیست" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="general">عمومی</SelectItem>
+                          <SelectItem value="villa">ویلا</SelectItem>
+                          <SelectItem value="personnel">پرسنل</SelectItem>
+                          <SelectItem value="stakeholder">ذی‌نفع / هیئت مدیره</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedEntityType === 'villa' && (
+                  <FormField control={form.control} name="relatedEntityId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>انتخاب ویلا</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="یک ویلا را انتخاب کنید" /></SelectTrigger></FormControl>
+                        <SelectContent>{villas?.map(v => <SelectItem key={v.id} value={v.id}>{v.villaNumber}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                )}
+                {selectedEntityType === 'personnel' && (
+                   <FormField control={form.control} name="relatedEntityId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>انتخاب پرسنل</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="یک شخص را انتخاب کنید" /></SelectTrigger></FormControl>
+                        <SelectContent>{personnel?.map(p => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                )}
+                {selectedEntityType === 'stakeholder' && (
+                    <FormField control={form.control} name="relatedEntityId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>انتخاب ذی‌نفع</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="یک ذی‌نفع را انتخاب کنید" /></SelectTrigger></FormControl>
+                        <SelectContent>{stakeholders?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                )}
+
               <FormField
                 control={form.control}
                 name="file"

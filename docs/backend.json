@@ -267,6 +267,19 @@
           "type": "string",
           "format": "uri",
           "description": "URL to the stored file in Firebase Storage."
+        },
+        "relatedEntityType": {
+            "type": "string",
+            "enum": ["villa", "personnel", "stakeholder", "general"],
+            "description": "The type of entity this document is related to."
+        },
+        "relatedEntityId": {
+            "type": "string",
+            "description": "The ID of the related entity."
+        },
+        "relatedEntityName": {
+            "type": "string",
+            "description": "A denormalized name of the related entity for display purposes."
         }
       },
       "required": [
