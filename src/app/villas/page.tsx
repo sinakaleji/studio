@@ -60,8 +60,8 @@ export default function VillasPage() {
     },
   });
 
-  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, [firestore]);
-  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, [firestore]);
+  const villasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'villas') : null, []);
+  const stakeholdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'stakeholders') : null, []);
 
   const { data: villas, isLoading: isLoadingVillas } = useCollection<Villa>(villasQuery);
   const { data: stakeholders, isLoading: isLoadingStakeholders } = useCollection<Stakeholder>(stakeholdersQuery);
