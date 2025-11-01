@@ -75,6 +75,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const firebaseServices = useMemo(() => {
     return initializeFirebase();
   }, []); 
+  const router = useRouter();
   
   useEffect(() => {
     const setup = async () => {
@@ -90,31 +91,28 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     const fixSuperAdmin = async () => {
       const { auth, firestore } = firebaseServices;
       if (auth && firestore) {
-        // This will run when the auth state changes (e.g., on login)
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
           if (user && user.email === 'sinakaleji@gmail.com') {
             const userDocRef = doc(firestore, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
-            // Check if role is not already set to prevent unnecessary writes
             if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
               try {
                 await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
                 console.log("Successfully assigned super_admin role to sinakaleji@gmail.com");
-                // Force a reload to ensure AuthGuard re-evaluates the new role
-                window.location.reload();
+                // Force a redirect to ensure AuthGuard re-evaluates the new role
+                router.replace('/dashboard');
               } catch (e) {
                 console.error("Failed to assign super_admin role:", e);
               }
             }
           }
         });
-        // Cleanup subscription on component unmount
         return () => unsubscribe();
       }
     };
 
     fixSuperAdmin();
-  }, [firebaseServices]);
+  }, [firebaseServices, router]);
 
   return (
     <FirebaseProvider
