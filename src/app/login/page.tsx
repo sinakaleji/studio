@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
+import { useRouter } from 'next/navigation';
 
 const loginSchema = z.object({
   email: z.string().email('ایمیل نامعتبر است'),
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { auth } = useFirebase();
+  const router = useRouter();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,7 +41,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      // Redirect is handled by the root page /
+      router.push('/dashboard');
     } catch (error) {
       let description = 'مشکلی در هنگام ورود به وجود آمد.';
       if (error instanceof FirebaseError) {
