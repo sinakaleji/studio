@@ -64,7 +64,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow list: if isSuperAdmin();
-      allow update: if isSuperAdmin() || request.auth.uid == userId;
+      allow update: if isSuperAdmin() || (request.auth.uid == userId && request.resource.data.keys().hasOnly(['displayName']));
       allow delete: if isSuperAdmin();
       // A user can create their own document on signup
       allow create: if isSignedIn() && request.auth.uid == userId;

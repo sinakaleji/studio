@@ -121,7 +121,7 @@ export default function AppSidebar() {
                       ) : user ? (
                           <>
                             <span className="font-medium">{user.displayName || user.email}</span>
-                            <span className="text-xs text-muted-foreground">{userRole ? `نقش: ${userRole}` : 'بدون نقش'}</span>
+                            <span className="text-xs text-muted-foreground">{userRole ? `نقش: ${getRoleDisplayName(userRole as any)}` : 'بدون نقش'}</span>
                           </>
                       ): (
                           <span className="font-medium">وارد نشده</span>
@@ -148,4 +148,13 @@ export default function AppSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
+}
+
+const getRoleDisplayName = (role: string) => {
+    switch (role) {
+        case 'super_admin': return 'سوپر ادمین';
+        case 'admin': return 'ادمین';
+        case 'financial_expert': return 'کارشناس مالی';
+        default: return 'بدون نقش';
+    }
 }
