@@ -26,6 +26,8 @@ const payrollSettingsSchema = z.object({
   monthlyHousingAllowance: z.coerce.number().min(0, 'حق مسکن نمی‌تواند منفی باشد'),
   monthlyFoodAllowance: z.coerce.number().min(0, 'بن خواروبار نمی‌تواند منفی باشد'),
   perChildAllowance: z.coerce.number().min(0, 'حق اولاد نمی‌تواند منفی باشد'),
+  marriageAllowance: z.coerce.number().min(0, 'حق تاهل نمی‌تواند منفی باشد'),
+  monthlySeniorityBase: z.coerce.number().min(0, 'پایه سنوات نمی‌تواند منفی باشد'),
   taxBrackets: z.array(taxBracketSchema),
 });
 
@@ -50,8 +52,10 @@ export default function PayrollSettings() {
     defaultValues: {
       insuranceRate: 7,
       monthlyHousingAllowance: 9000000,
-      monthlyFoodAllowance: 14000000,
-      perChildAllowance: 0,
+      monthlyFoodAllowance: 22000000,
+      perChildAllowance: 10390968,
+      marriageAllowance: 5000000,
+      monthlySeniorityBase: 2820000,
       taxBrackets: [],
     },
   });
@@ -97,39 +101,21 @@ export default function PayrollSettings() {
         <div className='space-y-4'>
             <h4 className='font-medium'>مزایای ماهانه (تومان)</h4>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg'>
-                <FormField
-                control={form.control}
-                name="monthlyHousingAllowance"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>حق مسکن</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="monthlyFoodAllowance"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>بن خواروبار</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="perChildAllowance"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>حق اولاد (به ازای هر فرزند)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-                />
+                <FormField control={form.control} name="monthlyHousingAllowance" render={({ field }) => (
+                    <FormItem><FormLabel>حق مسکن</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="monthlyFoodAllowance" render={({ field }) => (
+                    <FormItem><FormLabel>بن خواروبار</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="perChildAllowance" render={({ field }) => (
+                    <FormItem><FormLabel>حق اولاد (به ازای هر فرزند)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                 <FormField control={form.control} name="marriageAllowance" render={({ field }) => (
+                    <FormItem><FormLabel>حق تاهل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="monthlySeniorityBase" render={({ field }) => (
+                    <FormItem><FormLabel>پایه سنوات ماهانه</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
             </div>
         </div>
 

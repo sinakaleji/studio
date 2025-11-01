@@ -75,6 +75,10 @@
         "numberOfChildren": {
             "type": "number",
             "description": "Number of children for calculating child allowance."
+        },
+        "isMarried": {
+            "type": "boolean",
+            "description": "Marital status for calculating marriage allowance."
         }
       },
       "required": [
@@ -206,6 +210,8 @@
         "housingAllowance": {"type": "number"},
         "foodAllowance": {"type": "number"},
         "childAllowance": {"type": "number"},
+        "marriageAllowance": {"type": "number"},
+        "seniorityPay": {"type": "number"},
         "overtimeHours": {"type": "number"},
         "overtimePay": {"type": "number"},
         "totalEarnings": {"type": "number"},
@@ -321,6 +327,14 @@
         "perChildAllowance": {
             "type": "number",
             "description": "Allowance amount per child."
+        },
+        "marriageAllowance": {
+            "type": "number",
+            "description": "Monthly marriage allowance for married personnel."
+        },
+        "monthlySeniorityBase": {
+            "type": "number",
+            "description": "Monthly seniority base pay for eligible personnel."
         },
         "taxBrackets": {
           "type": "array",

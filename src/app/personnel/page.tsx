@@ -26,6 +26,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMemoFirebase } from '@/firebase/provider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const personnelSchema = z.object({
   firstName: z.string().min(1, 'نام الزامی است'),
@@ -33,6 +35,7 @@ const personnelSchema = z.object({
   jobTitle: z.string().min(1, 'سمت شغلی الزامی است'),
   baseSalary: z.coerce.number().min(0, 'حقوق پایه الزامی است'),
   numberOfChildren: z.coerce.number().min(0, 'تعداد فرزندان نمی‌تواند منفی باشد').optional(),
+  isMarried: z.boolean().optional(),
   contactNumber: z.string().optional(),
   accountNumber: z.string().optional(),
   insuranceNumber: z.string().optional(),
@@ -54,6 +57,7 @@ export default function PersonnelPage() {
       jobTitle: '',
       baseSalary: 0,
       numberOfChildren: 0,
+      isMarried: false,
       contactNumber: '',
       accountNumber: '',
       insuranceNumber: '',
@@ -75,6 +79,7 @@ export default function PersonnelPage() {
       jobTitle: '',
       baseSalary: 0,
       numberOfChildren: 0,
+      isMarried: false,
       contactNumber: '',
       accountNumber: '',
       insuranceNumber: '',
@@ -203,13 +208,28 @@ export default function PersonnelPage() {
                 <FormField control={form.control} name="jobTitle" render={({ field }) => (
                     <FormItem><FormLabel>سمت شغلی</FormLabel><FormControl><Input placeholder="مثال: نگهبان" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="baseSalary" render={({ field }) => (
-                        <FormItem><FormLabel>حقوق پایه ماهانه (تومان)</FormLabel><FormControl><Input type="number" placeholder="مثال: 10000000" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                <FormField control={form.control} name="baseSalary" render={({ field }) => (
+                    <FormItem><FormLabel>حقوق پایه ماهانه (تومان)</FormLabel><FormControl><Input type="number" placeholder="مثال: 10000000" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <div className="grid grid-cols-2 gap-4 items-center">
                     <FormField control={form.control} name="numberOfChildren" render={({ field }) => (
                         <FormItem><FormLabel>تعداد فرزندان</FormLabel><FormControl><Input type="number" placeholder="مثال: 2" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
+                     <FormField
+                        control={form.control}
+                        name="isMarried"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-start gap-2 pt-6">
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className='mb-0'>متاهل</FormLabel>
+                          </FormItem>
+                        )}
+                      />
                 </div>
                  <FormField control={form.control} name="contactNumber" render={({ field }) => (
                     <FormItem><FormLabel>شماره تماس (اختیاری)</FormLabel><FormControl><Input placeholder="مثال: 09123456789" {...field} /></FormControl><FormMessage /></FormItem>

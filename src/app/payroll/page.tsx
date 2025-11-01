@@ -35,7 +35,7 @@ const payrollSchema = z.object({
 });
 
 type PayrollFormData = z.infer<typeof payrollSchema>;
-type Personnel = { id: string; firstName: string; lastName: string; jobTitle: string; baseSalary: number; numberOfChildren?: number };
+type Personnel = { id: string; firstName: string; lastName: string; jobTitle: string; baseSalary: number; numberOfChildren?: number; isMarried?: boolean; };
 type Attendance = { id: string; status: 'present' | 'absent'; entryTime?: string; exitTime?: string; };
 type PayrollSettings = { 
     insuranceRate: number; 
@@ -43,6 +43,8 @@ type PayrollSettings = {
     monthlyHousingAllowance: number;
     monthlyFoodAllowance: number;
     perChildAllowance: number;
+    marriageAllowance: number;
+    monthlySeniorityBase: number;
 };
 type Payroll = {
     id: string;
@@ -54,6 +56,8 @@ type Payroll = {
     housingAllowance: number;
     foodAllowance: number;
     childAllowance: number;
+    marriageAllowance: number;
+    seniorityPay: number;
     overtimeHours: number;
     overtimePay: number;
     totalEarnings: number;
@@ -168,8 +172,10 @@ export default function PayrollPage() {
     const housingAllowance = payrollSettings.monthlyHousingAllowance || 0;
     const foodAllowance = payrollSettings.monthlyFoodAllowance || 0;
     const childAllowance = (selectedPersonnel.numberOfChildren || 0) * (payrollSettings.perChildAllowance || 0);
+    const marriageAllowance = (selectedPersonnel.isMarried ? payrollSettings.marriageAllowance : 0) || 0;
+    const seniorityPay = payrollSettings.monthlySeniorityBase || 0; // Assuming everyone gets it for simplicity
 
-    const totalEarnings = baseSalary + housingAllowance + foodAllowance + childAllowance + overtimePay;
+    const totalEarnings = baseSalary + housingAllowance + foodAllowance + childAllowance + marriageAllowance + seniorityPay + overtimePay;
 
     // 4. Calculate Deductions
     const insuranceDeduction = totalEarnings * (payrollSettings.insuranceRate / 100);
@@ -200,6 +206,8 @@ export default function PayrollPage() {
       housingAllowance: parseFloat(housingAllowance.toFixed(0)),
       foodAllowance: parseFloat(foodAllowance.toFixed(0)),
       childAllowance: parseFloat(childAllowance.toFixed(0)),
+      marriageAllowance: parseFloat(marriageAllowance.toFixed(0)),
+      seniorityPay: parseFloat(seniorityPay.toFixed(0)),
       overtimeHours: parseFloat(overtimeHours.toFixed(2)),
       overtimePay: parseFloat(overtimePay.toFixed(0)),
       totalEarnings: parseFloat(totalEarnings.toFixed(0)),
@@ -329,7 +337,7 @@ export default function PayrollPage() {
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="ماه را انتخاب کنید" />
-                        </SelectTrigger>
+                        </Trigger>
                         </FormControl>
                         <SelectContent>
                             {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}

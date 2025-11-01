@@ -18,10 +18,10 @@ const villasData = [
 ];
 
 const personnelData = [
-    { id: 'p_alikarimi', firstName: 'علی', lastName: 'کریمی', jobTitle: 'مدیر داخلی', contactNumber: '09121112233', accountNumber: 'IR123456789012345678901234', insuranceNumber: '1234567890' },
-    { id: 'p_maryamhosseini', firstName: 'مریم', lastName: 'حسینی', jobTitle: 'مسئول پذیرش', contactNumber: '09124445566', accountNumber: 'IR234567890123456789012345', insuranceNumber: '2345678901' },
-    { id: 'p_rezasadeghi', firstName: 'رضا', lastName: 'صادقی', jobTitle: 'نگهبان', contactNumber: '09127778899', accountNumber: 'IR345678901234567890123456', insuranceNumber: '3456789012' },
-    { id: 'p_saramoradi', firstName: 'سارا', lastName: 'مرادی', jobTitle: 'باغبان', contactNumber: '09120001122', accountNumber: 'IR456789012345678901234567', insuranceNumber: '4567890123' },
+    { id: 'p_alikarimi', firstName: 'علی', lastName: 'کریمی', jobTitle: 'مدیر داخلی', baseSalary: 15000000, numberOfChildren: 2, isMarried: true, contactNumber: '09121112233', accountNumber: 'IR123456789012345678901234', insuranceNumber: '1234567890' },
+    { id: 'p_maryamhosseini', firstName: 'مریم', lastName: 'حسینی', jobTitle: 'مسئول پذیرش', baseSalary: 10000000, numberOfChildren: 0, isMarried: false, contactNumber: '09124445566', accountNumber: 'IR234567890123456789012345', insuranceNumber: '2345678901' },
+    { id: 'p_rezasadeghi', firstName: 'رضا', lastName: 'صادقی', jobTitle: 'نگهبان', baseSalary: 9500000, numberOfChildren: 1, isMarried: true, contactNumber: '09127778899', accountNumber: 'IR345678901234567890123456', insuranceNumber: '3456789012' },
+    { id: 'p_saramoradi', firstName: 'سارا', lastName: 'مرادی', jobTitle: 'باغبان', baseSalary: 9000000, numberOfChildren: 0, isMarried: false, contactNumber: '09120001122', accountNumber: 'IR456789012345678901234567', insuranceNumber: '4567890123' },
 ];
 
 const transactionsData = [
@@ -32,21 +32,6 @@ const transactionsData = [
     { description: 'خرید تجهیزات نظافتی', amount: 1200000, type: 'expense', date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
     { description: 'شارژ ماهانه ویلا C110', amount: 600000, type: 'income', date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
     { description: 'پرداخت قبض برق عمومی', amount: 3500000, type: 'expense', date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
-];
-
-const payrollsData = [
-    { personnelId: 'p_alikarimi', salary: 15000000, deductions: 2000000, overtimeHours: 10, netPay: 14104167, payDate: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
-    { personnelId: 'p_maryamhosseini', salary: 10000000, deductions: 1500000, overtimeHours: 5, netPay: 8864583, payDate: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
-];
-
-const attendanceData = [
-    // Some random data for the last month
-    { personnelId: 'p_alikarimi', date: '2023-10-01', status: 'present', entryTime: '08:50', exitTime: '18:05', isLate: false },
-    { personnelId: 'p_maryamhosseini', date: '2023-10-01', status: 'present', entryTime: '09:15', exitTime: '17:30', isLate: true },
-    { personnelId: 'p_rezasadeghi', date: '2023-10-01', status: 'present', entryTime: '19:00', exitTime: '07:00', isLate: false },
-    { personnelId: 'p_saramoradi', date: '2023-10-01', status: 'absent' },
-    { personnelId: 'p_alikarimi', date: '2023-10-02', status: 'present', entryTime: '08:45', exitTime: '18:00', isLate: false },
-    { personnelId: 'p_maryamhosseini', date: '2023-10-02', status: 'present', entryTime: '08:58', exitTime: '17:35', isLate: false },
 ];
 
 const estateData = {
@@ -60,12 +45,17 @@ const ESTATE_DOC_ID = "main-estate-info";
 const payrollSettingsData = {
     insuranceRate: 7, // 7%
     taxBrackets: [
-        { from: 0, to: 10000000, rate: 0 },
-        { from: 10000001, to: 14000000, rate: 10 },
-        { from: 14000001, to: 23000000, rate: 15 },
-        { from: 23000001, to: 34000000, rate: 20 },
-        { from: 34000001, to: Infinity, rate: 30 },
-    ]
+        { from: 0, to: 103909680, rate: 0 },
+        { from: 103909681, to: 140000000, rate: 10 },
+        { from: 140000001, to: 230000000, rate: 15 },
+        { from: 230000001, to: 340000000, rate: 20 },
+        { from: 340000001, to: Infinity, rate: 30 },
+    ],
+    monthlyHousingAllowance: 9000000,
+    monthlyFoodAllowance: 22000000,
+    monthlySeniorityBase: 2820000,
+    marriageAllowance: 5000000,
+    perChildAllowance: 10390968, // This is based on image but seems high for per child. It's likely the total for a specific case. Using it as per-child for now.
 };
 const PAYROLL_SETTINGS_DOC_ID = 'default';
 
@@ -78,9 +68,7 @@ async function seedCollection(firestore: Firestore, collectionName: string, data
     data.forEach(item => {
       let docRef;
       if(idField && item[idField]) {
-         const id = collectionName === 'attendances' 
-            ? `${item.date}_${item.personnelId}` 
-            : String(item[idField]);
+         const id = String(item[idField]);
          docRef = doc(collectionRef, id);
       } else {
          docRef = doc(collectionRef);
@@ -124,9 +112,6 @@ export async function seedDatabase(firestore: Firestore) {
         await Promise.all([
             seedCollection(firestore, 'villas', villasData),
             seedCollection(firestore, 'financial_transactions', transactionsData),
-            // We are commenting out payrolls and attendance seeding to allow users to generate them
-            // seedCollection(firestore, 'payrolls', payrollsData),
-            // seedCollection(firestore, 'attendances', attendanceData, 'id')
         ]);
 
         console.log("Database seeding process completed.");

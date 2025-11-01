@@ -28,6 +28,8 @@ type Payroll = {
     housingAllowance: number;
     foodAllowance: number;
     childAllowance: number;
+    marriageAllowance: number;
+    seniorityPay: number;
     overtimeHours: number;
     overtimePay: number;
     totalEarnings: number;
@@ -43,11 +45,10 @@ type PayslipDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-const PayslipRow = ({ label, value, isBold = false, isTotal=false, currency = "تومان" }: { label: string; value: string | number; isBold?: boolean, isTotal?: boolean, currency?: string }) => (
+const PayslipRow = ({ label, value, isBold = false, currency = "تومان" }: { label: string; value: string | number; isBold?: boolean, currency?: string }) => (
     <>
         <p className={`text-sm ${isBold ? 'font-semibold' : ''}`}>{label}</p>
         <p className={`text-sm text-left dir-ltr ${isBold ? 'font-semibold' : ''}`}>{typeof value === 'number' ? value.toLocaleString('fa-IR') : value} {currency}</p>
-        {isTotal && <Separator className="col-span-2 my-1" />}
     </>
 );
 
@@ -95,6 +96,8 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
                     <PayslipRow label="حقوق پایه" value={payslip.baseSalary} />
                     <PayslipRow label="حق مسکن" value={payslip.housingAllowance} />
                     <PayslipRow label="بن خواروبار" value={payslip.foodAllowance} />
+                    <PayslipRow label="پایه سنوات" value={payslip.seniorityPay} />
+                    <PayslipRow label="حق تاهل" value={payslip.marriageAllowance} />
                     <PayslipRow label="حق اولاد" value={payslip.childAllowance} />
                     <Separator className="col-span-2 my-1" />
                     <PayslipRow label="ساعات اضافه کاری" value={payslip.overtimeHours.toLocaleString('fa-IR')} currency="ساعت" />
