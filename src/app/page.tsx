@@ -24,6 +24,8 @@ export default function RootPage() {
       return;
     }
 
+    if (!firestore) return; // Wait for firestore to be available
+
     const checkUserRole = async () => {
       const userDocRef = doc(firestore, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);

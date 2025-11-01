@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, type ReactNode, useEffect, useState } from 'react';
-import { FirebaseProvider, useUser } from '@/firebase/provider';
+import { FirebaseProvider, useFirebase, useUser } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { seedDatabase } from '@/lib/data-seeder';
 import { usePathname, useRouter } from 'next/navigation';
@@ -19,11 +19,14 @@ function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
-  const { firestore } = initializeFirebase();
+  const { firestore } = useFirebase();
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
-      if (isUserLoading) return;
+      if (isUserLoading || !firestore) {
+          // Wait for user and firestore to be available
+          return;
+      }
 
       if (user) {
         // User is logged in, check their role.
