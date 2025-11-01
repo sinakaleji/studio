@@ -228,7 +228,6 @@ export default function PayrollPage() {
     toast({ title: 'موفقیت‌آمیز', description: 'فیش حقوقی جدید با موفقیت محاسبه و ثبت شد.' });
   };
 
-
   return (
     <AppLayout>
       <Header title="حقوق و دستمزد" />
