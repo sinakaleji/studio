@@ -24,13 +24,6 @@ function AuthGuard({ children }: { children: ReactNode }) {
     const checkAuthAndRedirect = async () => {
       if (!isUserLoading) {
         if (user) {
-           const userDocRef = doc(firestore, 'users', user.uid);
-           const userDocSnap = await getDoc(userDocRef);
-           if (!userDocSnap.exists() && pathname !== '/signup') {
-             // This might be a new user, send them to finish signup if profile doesn't exist
-             // Or maybe they were deleted. For now, let's keep it simple.
-           }
-
           if (publicPaths.includes(pathname)) {
             router.replace('/dashboard');
           }
