@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirebase } from '@/firebase';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, doc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -112,7 +112,7 @@ export default function PersonnelPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout>-
       <Header title="مدیریت پرسنل" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>

@@ -165,14 +165,14 @@ export default function PayrollPage() {
         }
     });
     
-    const baseSalary = selectedPersonnel.baseSalary || 0;
+    const baseSalary = parseFloat(String(selectedPersonnel.baseSalary)) || 0;
     const overtimeHours = Math.max(0, totalWorkHours - WORK_HOURS_PER_MONTH);
     const hourlyRate = baseSalary / WORK_HOURS_PER_MONTH;
     const overtimePay = overtimeHours * hourlyRate * OVERTIME_RATE;
 
     // 3. Calculate Benefits
-    const housingAllowance = payrollSettings.monthlyHousingAllowance || 0;
-    const foodAllowance = payrollSettings.monthlyFoodAllowance || 0;
+    const housingAllowance = parseFloat(String(payrollSettings.monthlyHousingAllowance)) || 0;
+    const foodAllowance = parseFloat(String(payrollSettings.monthlyFoodAllowance)) || 0;
     const childAllowance = (selectedPersonnel.numberOfChildren || 0) * (payrollSettings.perChildAllowance || 0);
     const marriageAllowance = (selectedPersonnel.isMarried ? payrollSettings.marriageAllowance : 0) || 0;
     const seniorityPay = payrollSettings.monthlySeniorityBase || 0; // Assuming everyone gets it for simplicity
