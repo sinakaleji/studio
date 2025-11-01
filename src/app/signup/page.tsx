@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useFirebase, createUserWithEmailAndPassword } from '@/firebase';
+import { useFirebase } from '@/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
@@ -18,6 +19,7 @@ const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
 
 const signupSchema = z
   .object({
+    displayName: z.string().min(1, 'نام نمایشی الزامی است'),
     email: z.string().email('ایمیل نامعتبر است'),
     password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد'),
     confirmPassword: z.string(),
@@ -37,6 +39,7 @@ export default function SignupPage() {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      displayName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -58,12 +61,13 @@ export default function SignupPage() {
       await setDoc(doc(firestore, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
+        displayName: data.displayName,
         role: role,
       });
 
       toast({
         title: 'ثبت‌نام موفق',
-        description: role === 'super_admin' ? 'حساب شما با دسترسی کامل ایجاد شد.' : 'حساب کاربری شما ایجاد شد. لطفاً منتظر تایید مدیر سیستم بمانید.',
+        description: role === 'super_admin' ? 'حساب شما با دسترسی کامل ایجاد شد. لطفاً وارد شوید.' : 'حساب شما ایجاد شد. لطفاً منتظر تایید مدیر بمانید.',
       });
       // Redirect is handled by the root page /
     } catch (error) {
@@ -93,6 +97,19 @@ export default function SignupPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="displayName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>نام نمایشی</FormLabel>
+                    <FormControl>
+                      <Input placeholder="مثال: علی رضایی" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"

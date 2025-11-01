@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useFirebase, signInWithEmailAndPassword } from '@/firebase';
+import { useFirebase } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 
 const loginSchema = z.object({
   email: z.string().email('ایمیل نامعتبر است'),
-  password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد'),
+  password: z.string().min(1, 'رمز عبور الزامی است'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,6 +35,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
@@ -95,6 +97,11 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+               <div className="text-sm">
+                <Link href="/forgot-password" passHref>
+                  <span className="underline cursor-pointer">فراموشی رمز عبور</span>
+                </Link>
+              </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 ورود
