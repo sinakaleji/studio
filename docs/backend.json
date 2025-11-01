@@ -60,6 +60,10 @@
           "type": "string",
           "description": "Job title of the personnel."
         },
+        "baseSalary": {
+          "type": "number",
+          "description": "Monthly base salary of the personnel."
+        },
         "accountNumber": {
             "type": "string",
             "description": "Bank account number for salary payment."
@@ -67,13 +71,18 @@
         "insuranceNumber": {
             "type": "string",
             "description": "Social security or insurance number."
+        },
+        "numberOfChildren": {
+            "type": "number",
+            "description": "Number of children for calculating child allowance."
         }
       },
       "required": [
         "id",
         "firstName",
         "lastName",
-        "jobTitle"
+        "jobTitle",
+        "baseSalary"
       ]
     },
     "Stakeholder": {
@@ -187,46 +196,26 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Payroll",
       "type": "object",
-      "description": "Represents payroll information for personnel.",
+      "description": "Represents a calculated payroll for a specific month for a personnel.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the payroll entry."
-        },
-        "personnelId": {
-          "type": "string",
-          "description": "Reference to Personnel."
-        },
-        "salary": {
-          "type": "number",
-          "description": "Base salary amount."
-        },
-        "deductions": {
-          "type": "number",
-          "description": "Total deductions (taxes, insurance)."
-        },
-        "overtimeHours": {
-          "type": "number",
-          "description": "Number of overtime hours worked."
-        },
-        "netPay": {
-          "type": "number",
-          "description": "Net pay amount after calculations."
-        },
-        "payDate": {
-          "type": "string",
-          "description": "Date of the payroll.",
-          "format": "date-time"
-        }
+        "id": {"type": "string"},
+        "personnelId": {"type": "string"},
+        "month": {"type": "string", "description": "The month of the payroll in YYYY-MM format."},
+        "payDate": {"type": "string", "format": "date-time"},
+        "baseSalary": {"type": "number"},
+        "housingAllowance": {"type": "number"},
+        "foodAllowance": {"type": "number"},
+        "childAllowance": {"type": "number"},
+        "overtimeHours": {"type": "number"},
+        "overtimePay": {"type": "number"},
+        "totalEarnings": {"type": "number"},
+        "insuranceDeduction": {"type": "number"},
+        "taxDeduction": {"type": "number"},
+        "totalDeductions": {"type": "number"},
+        "netPay": {"type": "number"}
       },
       "required": [
-        "id",
-        "personnelId",
-        "salary",
-        "deductions",
-        "netPay",
-        "payDate",
-        "overtimeHours"
+        "id", "personnelId", "month", "payDate", "baseSalary", "totalEarnings", "totalDeductions", "netPay"
       ]
     },
     "Document": {
@@ -319,7 +308,19 @@
         },
         "insuranceRate": {
           "type": "number",
-          "description": "The percentage rate for insurance deductions."
+          "description": "The percentage rate for insurance deductions (employee's share)."
+        },
+        "monthlyHousingAllowance": {
+            "type": "number",
+            "description": "Monthly housing allowance amount."
+        },
+        "monthlyFoodAllowance": {
+            "type": "number",
+            "description": "Monthly food allowance amount."
+        },
+        "perChildAllowance": {
+            "type": "number",
+            "description": "Allowance amount per child."
         },
         "taxBrackets": {
           "type": "array",
@@ -331,10 +332,10 @@
               "rate": { "type": "number" }
             }
           },
-          "description": "An array defining tax brackets and their rates."
+          "description": "An array defining annual tax brackets and their rates."
         }
       },
-      "required": ["id", "insuranceRate", "taxBrackets"]
+      "required": ["id", "insuranceRate", "taxBrackets", "monthlyHousingAllowance", "monthlyFoodAllowance"]
     }
   },
   "auth": {

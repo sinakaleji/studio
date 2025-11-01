@@ -25,6 +25,9 @@ type Payroll = {
     payDate: any;
     month: string;
     baseSalary: number;
+    housingAllowance: number;
+    foodAllowance: number;
+    childAllowance: number;
     overtimeHours: number;
     overtimePay: number;
     totalEarnings: number;
@@ -78,7 +81,7 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <div ref={componentRef} className="p-4 print:p-0">
             <DialogHeader>
             <DialogTitle>فیش حقوقی - {monthLabel}</DialogTitle>
@@ -88,8 +91,12 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border p-4">
-                    <h4 className="col-span-2 text-base font-semibold text-green-600 mb-2">درآمدها</h4>
+                    <h4 className="col-span-2 text-base font-semibold text-green-600 mb-2">درآمدها و مزایا</h4>
                     <PayslipRow label="حقوق پایه" value={payslip.baseSalary} />
+                    <PayslipRow label="حق مسکن" value={payslip.housingAllowance} />
+                    <PayslipRow label="بن خواروبار" value={payslip.foodAllowance} />
+                    <PayslipRow label="حق اولاد" value={payslip.childAllowance} />
+                    <Separator className="col-span-2 my-1" />
                     <PayslipRow label="ساعات اضافه کاری" value={payslip.overtimeHours.toLocaleString('fa-IR')} currency="ساعت" />
                     <PayslipRow label="مبلغ اضافه کاری" value={payslip.overtimePay} />
                     <Separator className="col-span-2 my-2" />
@@ -104,7 +111,7 @@ export default function PayslipDialog({ payslip, open, onOpenChange }: PayslipDi
                     <PayslipRow label="جمع کسورات" value={payslip.totalDeductions} isBold />
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border-2 border-primary p-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border-2 border-primary bg-primary/5 p-4">
                     <PayslipRow label="خالص پرداختی" value={payslip.netPay} isBold />
                 </div>
             </div>

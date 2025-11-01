@@ -31,6 +31,8 @@ const personnelSchema = z.object({
   firstName: z.string().min(1, 'نام الزامی است'),
   lastName: z.string().min(1, 'نام خانوادگی الزامی است'),
   jobTitle: z.string().min(1, 'سمت شغلی الزامی است'),
+  baseSalary: z.coerce.number().min(0, 'حقوق پایه الزامی است'),
+  numberOfChildren: z.coerce.number().min(0, 'تعداد فرزندان نمی‌تواند منفی باشد').optional(),
   contactNumber: z.string().optional(),
   accountNumber: z.string().optional(),
   insuranceNumber: z.string().optional(),
@@ -50,6 +52,8 @@ export default function PersonnelPage() {
       firstName: '',
       lastName: '',
       jobTitle: '',
+      baseSalary: 0,
+      numberOfChildren: 0,
       contactNumber: '',
       accountNumber: '',
       insuranceNumber: '',
@@ -66,12 +70,14 @@ export default function PersonnelPage() {
   const handleAddNew = () => {
     setEditingPersonnel(null);
     form.reset({
-        firstName: '',
-        lastName: '',
-        jobTitle: '',
-        contactNumber: '',
-        accountNumber: '',
-        insuranceNumber: '',
+      firstName: '',
+      lastName: '',
+      jobTitle: '',
+      baseSalary: 0,
+      numberOfChildren: 0,
+      contactNumber: '',
+      accountNumber: '',
+      insuranceNumber: '',
     });
     setIsDialogOpen(true);
   };
@@ -108,7 +114,7 @@ export default function PersonnelPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>لیست پرسنل</CardTitle>
-              <CardDescription>مشاهده و مدیریت پرسنل فعال در شهرک</CardDescription>
+              <CardDescription>مشاهده و مدیریت اطلاعات و حقوق پایه پرسنل</CardDescription>
             </div>
             <Button onClick={handleAddNew}>
               <PlusCircle className="ml-2 h-4 w-4" />
@@ -128,9 +134,8 @@ export default function PersonnelPage() {
                         <TableRow>
                             <TableHead>نام</TableHead>
                             <TableHead>سمت شغلی</TableHead>
+                            <TableHead>حقوق پایه (تومان)</TableHead>
                             <TableHead>شماره تماس</TableHead>
-                            <TableHead>شماره حساب</TableHead>
-                            <TableHead>شماره بیمه</TableHead>
                             <TableHead>عملیات</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -144,9 +149,8 @@ export default function PersonnelPage() {
                                     {p.firstName} {p.lastName}
                                 </TableCell>
                                 <TableCell>{p.jobTitle}</TableCell>
+                                <TableCell>{p.baseSalary?.toLocaleString('fa-IR') || '۰'}</TableCell>
                                 <TableCell>{p.contactNumber || '-'}</TableCell>
-                                <TableCell>{p.accountNumber || '-'}</TableCell>
-                                <TableCell>{p.insuranceNumber || '-'}</TableCell>
                                 <TableCell className="flex gap-2">
                                     <Button variant="outline" size="icon" onClick={() => handleEdit(p)}>
                                       <Edit className="h-4 w-4" />
@@ -181,98 +185,46 @@ export default function PersonnelPage() {
       </main>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingPersonnel ? 'ویرایش پرسنل' : 'افزودن پرسنل جدید'}</DialogTitle>
-            <DialogDescription>اطلاعات پرسنل را وارد کنید.</DialogDescription>
+            <DialogDescription>اطلاعات کامل پرسنل را وارد کنید.</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>نام</FormLabel>
-                            <FormControl>
-                            <Input placeholder="مثال: محمد" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>نام خانوادگی</FormLabel>
-                            <FormControl>
-                            <Input placeholder="مثال: کریمی" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                    <FormField control={form.control} name="firstName" render={({ field }) => (
+                        <FormItem><FormLabel>نام</FormLabel><FormControl><Input placeholder="مثال: محمد" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="lastName" render={({ field }) => (
+                        <FormItem><FormLabel>نام خانوادگی</FormLabel><FormControl><Input placeholder="مثال: کریمی" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
                 </div>
-              <FormField
-                control={form.control}
-                name="jobTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>سمت شغلی</FormLabel>
-                    <FormControl>
-                      <Input placeholder="مثال: نگهبان" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>شماره تماس (اختیاری)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="مثال: 09123456789" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="accountNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>شماره حساب (اختیاری)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="شماره شبا یا شماره حساب" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="insuranceNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>شماره بیمه (اختیاری)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="کد کارگاه و شماره بیمه" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField control={form.control} name="jobTitle" render={({ field }) => (
+                    <FormItem><FormLabel>سمت شغلی</FormLabel><FormControl><Input placeholder="مثال: نگهبان" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="baseSalary" render={({ field }) => (
+                        <FormItem><FormLabel>حقوق پایه ماهانه (تومان)</FormLabel><FormControl><Input type="number" placeholder="مثال: 10000000" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="numberOfChildren" render={({ field }) => (
+                        <FormItem><FormLabel>تعداد فرزندان</FormLabel><FormControl><Input type="number" placeholder="مثال: 2" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+                 <FormField control={form.control} name="contactNumber" render={({ field }) => (
+                    <FormItem><FormLabel>شماره تماس (اختیاری)</FormLabel><FormControl><Input placeholder="مثال: 09123456789" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="accountNumber" render={({ field }) => (
+                        <FormItem><FormLabel>شماره حساب (اختیاری)</FormLabel><FormControl><Input placeholder="شماره شبا یا شماره حساب" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="insuranceNumber" render={({ field }) => (
+                        <FormItem><FormLabel>شماره بیمه (اختیاری)</FormLabel><FormControl><Input placeholder="کد کارگاه و شماره بیمه" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    انصراف
-                  </Button>
+                  <Button type="button" variant="outline">انصراف</Button>
                 </DialogClose>
                 <Button type="submit">ذخیره</Button>
               </DialogFooter>
