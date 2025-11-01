@@ -1,10 +1,16 @@
 'use server';
 
 import { Auth } from 'firebase/auth';
-import { Firestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { Firestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
-// This file is no longer used and can be deleted, but we'll keep it for now to avoid breaking imports.
-// The logic has been moved to the signup page for a more reliable super admin creation.
+const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
+
+/**
+ * This seeder is now deprecated and the logic is handled directly in `signup/page.tsx`
+ * and a temporary fix in `client-provider.tsx`.
+ * We keep the file to avoid breaking any potential imports, but it does nothing.
+ */
 export async function seedSuperAdmin(auth: Auth, firestore: Firestore) {
-    // Deprecated
+    // Deprecated. The logic for the primary super admin is now handled on signup
+    // and via a temporary fix in the client provider for existing users.
 }
