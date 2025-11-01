@@ -36,7 +36,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoleId, setUserRoleId] = useState<string | null>(null);
   const [isLoadingRole, setIsLoadingRole] = useState(true);
 
   useEffect(() => {
@@ -46,13 +46,13 @@ export default function AppSidebar() {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
-          setUserRole(userDocSnap.data().role);
+          setUserRoleId(userDocSnap.data().roleId);
         } else {
-          setUserRole(null); // No role assigned
+          setUserRoleId(null); // No role assigned
         }
         setIsLoadingRole(false);
       } else if (!isUserLoading) {
-        setUserRole(null);
+        setUserRoleId(null);
         setIsLoadingRole(false);
       }
     };
@@ -61,9 +61,9 @@ export default function AppSidebar() {
   }, [user, firestore, isUserLoading]);
 
   const menuItems = useMemo(() => {
-    if (!userRole) return [];
-    return allMenuItems.filter(item => item.roles.includes(userRole));
-  }, [userRole]);
+    if (!userRoleId) return [];
+    return allMenuItems.filter(item => item.roles.includes(userRoleId));
+  }, [userRoleId]);
 
   const handleSignOut = () => {
     if (auth) {
@@ -121,7 +121,7 @@ export default function AppSidebar() {
                       ) : user ? (
                           <>
                             <span className="font-medium">{user.displayName || user.email}</span>
-                            <span className="text-xs text-muted-foreground">{userRole ? `نقش: ${getRoleDisplayName(userRole as any)}` : 'بدون نقش'}</span>
+                            <span className="text-xs text-muted-foreground">{userRoleId ? `نقش: ${getRoleDisplayName(userRoleId as any)}` : 'بدون نقش'}</span>
                           </>
                       ): (
                           <span className="font-medium">وارد نشده</span>
