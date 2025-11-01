@@ -81,6 +81,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     const setup = async () => {
         if(firebaseServices.firestore && firebaseServices.auth) {
             await seedDatabase(firebaseServices.firestore);
+            // seedSuperAdmin is deprecated, but we call it to ensure no crashes if it's still imported.
             await seedSuperAdmin(firebaseServices.auth, firebaseServices.firestore);
         }
     }

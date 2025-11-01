@@ -14,6 +14,8 @@ import { useFirebase, createUserWithEmailAndPassword } from '@/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
+const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
+
 const signupSchema = z
   .object({
     email: z.string().email('ایمیل نامعتبر است'),
@@ -47,12 +49,15 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      // Create a user profile document in Firestore
-      // By default, new users have no role. A super_admin must assign one.
+      // Determine the role based on the email address.
+      // This is a simple and direct way to seed the first super admin.
+      const role = data.email === SUPER_ADMIN_EMAIL ? 'super_admin' : null;
+
+      // Create a user profile document in Firestore with the determined role.
       await setDoc(doc(firestore, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
-        role: null, // Default role
+        role: role,
       });
 
       toast({
