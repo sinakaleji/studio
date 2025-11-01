@@ -24,7 +24,7 @@ export default function SettingsPage() {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
-          setUserRole(userDocSnap.data().role);
+          setUserRole(userDocSnap.data().roleId);
         }
         setIsLoadingRole(false);
       } else if (!isUserLoading) {
