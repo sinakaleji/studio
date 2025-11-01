@@ -2,9 +2,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser();
@@ -13,7 +15,7 @@ export default function RootPage() {
   const [status, setStatus] = useState<'loading' | 'unauthenticated' | 'authenticated_no_role' | 'authenticated_with_role'>('loading');
 
   useEffect(() => {
-    if (isUserLoading) {
+    if (isUserLoading || !firestore) {
       setStatus('loading');
       return;
     }
@@ -24,10 +26,17 @@ export default function RootPage() {
       return;
     }
 
-    if (!firestore) return; // Wait for firestore to be available
-
     const checkUserRole = async () => {
       const userDocRef = doc(firestore, 'users', user.uid);
+      
+      // Special logic for super admin seeding
+      if (user.email === SUPER_ADMIN_EMAIL) {
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists() || userDoc.data()?.role !== 'super_admin') {
+              await setDoc(userDocRef, { role: 'super_admin', email: user.email, uid: user.uid }, { merge: true });
+          }
+      }
+
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists() && userDocSnap.data().role) {
         setStatus('authenticated_with_role');

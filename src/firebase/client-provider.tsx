@@ -5,7 +5,7 @@ import { FirebaseProvider, useFirebase, useUser } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { seedDatabase } from '@/lib/data-seeder';
 import { usePathname, useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface FirebaseClientProviderProps {
@@ -30,17 +30,9 @@ function AuthGuard({ children }: { children: ReactNode }) {
       if (user) {
         // User is logged in, check their role.
         const userDocRef = doc(firestore, 'users', user.uid);
-        let userDocSnap = await getDoc(userDocRef);
-        let userRole = userDocSnap.exists() ? userDocSnap.data().role : null;
+        const userDocSnap = await getDoc(userDocRef);
+        const userRole = userDocSnap.exists() ? userDocSnap.data().role : null;
         
-        // SPECIAL FIX: Assign super_admin role if not present for the specific email
-        if (user.email === 'sinakaleji@gmail.com' && userRole !== 'super_admin') {
-            await setDoc(userDocRef, { role: 'super_admin' }, { merge: true });
-            // Re-fetch the doc to get the updated role
-            userDocSnap = await getDoc(userDocRef);
-            userRole = userDocSnap.data()?.role;
-        }
-
         if (userRole) {
           // User has a role, they can access protected pages.
           if (publicPaths.includes(pathname) || pathname === '/') {
