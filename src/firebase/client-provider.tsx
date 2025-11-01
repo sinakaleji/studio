@@ -4,6 +4,7 @@ import React, { useMemo, type ReactNode, useEffect, useState } from 'react';
 import { FirebaseProvider, useFirebase, useUser } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { seedDatabase } from '@/lib/data-seeder';
+import { seedSuperAdmin } from '@/lib/user-seeder';
 import { usePathname, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
@@ -77,10 +78,14 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   }, []); 
   
   useEffect(() => {
-    if(firebaseServices.firestore) {
-      seedDatabase(firebaseServices.firestore);
+    const setup = async () => {
+        if(firebaseServices.firestore && firebaseServices.auth) {
+            await seedDatabase(firebaseServices.firestore);
+            await seedSuperAdmin(firebaseServices.auth, firebaseServices.firestore);
+        }
     }
-  }, [firebaseServices.firestore]);
+    setup();
+  }, [firebaseServices.firestore, firebaseServices.auth]);
 
   return (
     <FirebaseProvider
