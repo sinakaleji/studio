@@ -67,7 +67,7 @@ export default function PersonnelPage() {
   const personnelQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'personnel');
-  }, []);
+  }, [firestore]);
 
   const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 

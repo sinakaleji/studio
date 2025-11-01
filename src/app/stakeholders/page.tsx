@@ -54,7 +54,7 @@ export default function StakeholdersPage() {
   const stakeholdersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'stakeholders');
-  }, []);
+  }, [firestore]);
 
   const { data: stakeholders, isLoading } = useCollection<Stakeholder>(stakeholdersQuery);
 

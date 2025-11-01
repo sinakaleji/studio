@@ -43,12 +43,12 @@ export default function AttendancePage() {
 
   const personnelQuery = useMemoFirebase(() => 
     firestore ? collection(firestore, 'personnel') : null, 
-    []);
+  [firestore]);
   const { data: personnelList, isLoading: isLoadingPersonnel } = useCollection<Personnel>(personnelQuery);
 
   const attendanceQuery = useMemoFirebase(() => 
     firestore ? collection(firestore, 'attendances') : null, 
-    []);
+  [firestore]);
   const { data: allAttendances } = useCollection<Attendance>(attendanceQuery);
 
   const dailyAttendanceMap = useMemo(() => {

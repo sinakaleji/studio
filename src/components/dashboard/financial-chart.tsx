@@ -41,7 +41,7 @@ export default function FinancialChart() {
         collection(firestore, 'financial_transactions'),
         where('date', '>=', Timestamp.fromDate(oneMonthAgo))
     );
-  }, [oneMonthAgo]);
+  }, [firestore, oneMonthAgo]);
 
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 

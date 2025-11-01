@@ -87,8 +87,8 @@ export default function UsersPage() {
   const { firestore, auth } = useFirebase();
   const { toast } = useToast();
 
-  const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, []);
-  const rolesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'roles') : null, []);
+  const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const rolesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'roles') : null, [firestore]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
   const { data: roles, isLoading: isLoadingRoles } = useCollection<Role>(rolesQuery);
