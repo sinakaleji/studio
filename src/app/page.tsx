@@ -7,7 +7,6 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const SUPER_ADMIN_EMAIL = 'sinakaleji@gmail.com';
-const publicPaths = ['/login', '/signup'];
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser();
@@ -23,8 +22,6 @@ export default function RootPage() {
 
     if (!user) {
       setStatus('unauthenticated');
-      // No need to check publicPaths here, just redirect if not on a public path.
-      // But since this IS the root page, we redirect to login.
       router.replace('/login');
       return;
     }
