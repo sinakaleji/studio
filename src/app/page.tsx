@@ -18,34 +18,28 @@ export default function RootPage() {
 
   useEffect(() => {
     if (isUserLoading || !firestore) {
-      return; // صبر کن تا کاربر و فایراستور آماده شوند
+      return; 
     }
 
-    // اگر کاربر وارد نشده بود
     if (!user) {
       setStatus('unauthenticated');
-      // اگر در صفحه عمومی نبود، به صفحه لاگین هدایت کن
-      // این شرط برای جلوگیری از حلقه در صفحه لاگین است
       if (!publicPaths.includes(window.location.pathname)) {
         router.replace('/login');
       } else {
-        setStatus('idle'); // در صفحات عمومی نیازی به نمایش لودر نیست
+        setStatus('idle'); 
       }
       return;
     }
     
-    // اگر کاربر وارد شده بود
     const checkUserRole = async () => {
       setStatusMessage('در حال بررسی نقش کاربر...');
       const userDocRef = doc(firestore, 'users', user.uid);
       let userDocSnap = await getDoc(userDocRef);
 
-      // منطق اختصاص نقش سوپر ادمین
       if (user.email === SUPER_ADMIN_EMAIL) {
         if (!userDocSnap.exists() || userDocSnap.data()?.role !== 'super_admin') {
           setStatusMessage('در حال اختصاص نقش سوپر ادمین...');
           await setDoc(userDocRef, { role: 'super_admin', email: user.email, uid: user.uid }, { merge: true });
-          // پس از به‌روزرسانی، اطلاعات را مجدداً بخوان
           userDocSnap = await getDoc(userDocRef);
         }
       }
@@ -60,7 +54,7 @@ export default function RootPage() {
 
     checkUserRole();
 
-  }, [user, isUserLoading, router, firestore]);
+  }, [user, isUserLoading, firestore]);
 
   const handleSignOut = async () => {
     if (auth) {
@@ -69,7 +63,6 @@ export default function RootPage() {
     }
   }
 
-  // نمایش وضعیت‌های مختلف
   if (status === 'loading' || (status === 'unauthenticated' && !publicPaths.includes(window.location.pathname))) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -98,6 +91,5 @@ export default function RootPage() {
     )
   }
 
-  // اگر در صفحات عمومی هستیم یا کاربر به داشبورد هدایت شده، چیزی نمایش نده
   return null;
 }
