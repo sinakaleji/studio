@@ -29,12 +29,12 @@ function initializeData<T>(key: string, mockData: T[]): T[] {
 }
 
 function getData<T>(key: DataType): T[] {
+    const mockMap = {
+        [VILLAS_KEY]: mockVillas,
+        [PERSONNEL_KEY]: mockPersonnel,
+        [BOARD_MEMBERS_KEY]: mockBoardMembers
+    };
     if (typeof window === 'undefined') {
-        const mockMap = {
-            [VILLAS_KEY]: mockVillas,
-            [PERSONNEL_KEY]: mockPersonnel,
-            [BOARD_MEMBERS_KEY]: mockBoardMembers
-        };
         return mockMap[key] as T[];
     }
     return initializeData(key, (mockMap as any)[key]);
