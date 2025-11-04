@@ -2,7 +2,6 @@
 "use client";
 
 import Image from "next/image";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Villa } from "@/lib/types";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 
 interface SchematicMapProps {
   villas: Villa[];
+  mapImageUrl: string;
 }
 
 const VillaIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,8 +21,7 @@ const VillaIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-export default function SchematicMap({ villas }: SchematicMapProps) {
-  const mapImage = PlaceHolderImages.find(img => img.id === 'schematic-map');
+export default function SchematicMap({ villas, mapImageUrl }: SchematicMapProps) {
   const [selectedVilla, setSelectedVilla] = useState<Villa | null>(null);
 
   const handleVillaClick = (villa: Villa) => {
@@ -31,11 +30,10 @@ export default function SchematicMap({ villas }: SchematicMapProps) {
 
   return (
     <div className="relative w-full aspect-[3/2] rounded-lg overflow-hidden border">
-      {mapImage && (
+      {mapImageUrl && (
         <Image
-          src={mapImage.imageUrl}
-          alt={mapImage.description}
-          data-ai-hint={mapImage.imageHint}
+          src={mapImageUrl}
+          alt="نقشه شماتیک شهرک"
           fill
           className="object-cover"
         />

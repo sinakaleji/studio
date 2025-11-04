@@ -15,7 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getSettings } from "@/lib/settings";
 import type { Personnel } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface AddPersonnelProps {
   isOpen: boolean;
@@ -29,7 +31,9 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<Personnel['role'] | ''>('');
   const [contact, setContact] = useState("");
+  const [documentUrl, setDocumentUrl] = useState<string | undefined>(undefined);
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     const settings = getSettings();
@@ -40,11 +44,13 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
       setLastName(personnel.lastName || "");
       setRole(personnel.role || "");
       setContact(personnel.contact || "");
+      setDocumentUrl(personnel.documentUrl || undefined);
     } else {
       setFirstName("");
       setLastName("");
       setRole("");
       setContact("");
+      setDocumentUrl(undefined);
     }
   }, [personnel, isOpen]);
 
@@ -59,8 +65,28 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
       lastName,
       role: role as Personnel['role'],
       contact,
+      documentUrl,
     });
     onOpenChange(false);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setDocumentUrl(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+            variant: "destructive",
+            title: "خطا در آپلود فایل",
+            description: "لطفا یک فایل تصویری معتبر انتخاب کنید.",
+        });
+      }
+    }
   };
 
   return (
@@ -106,6 +132,20 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
             </Label>
             <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" />
           </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="document" className="text-right">
+              آپلود مدرک
+            </Label>
+            <Input id="document" type="file" onChange={handleFileChange} className="col-span-3" accept="image/*" />
+          </div>
+          {documentUrl && (
+             <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">پیش‌نمایش</Label>
+                <div className="col-span-3">
+                    <Image src={documentUrl} alt="پیش‌نمایش مدرک" width={80} height={80} className="rounded-md object-cover" />
+                </div>
+             </div>
+          )}
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleSubmit}>ذخیره</Button>

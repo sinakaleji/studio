@@ -5,6 +5,7 @@ export interface Personnel {
   lastName: string;
   role: string;
   contact: string;
+  documentUrl?: string;
 }
 
 export interface Villa {

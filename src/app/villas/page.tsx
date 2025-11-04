@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PageHeader from "@/components/page-header";
-import { getVillas, saveVillas } from "@/lib/data-manager";
+import { getVillas, saveVillas, getMapImageUrl, saveMapImageUrl } from "@/lib/data-manager";
 import type { Villa } from "@/lib/types";
 import {
   Table,
@@ -19,7 +19,7 @@ import SchematicMap from "./_components/schematic-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AddVilla from "./_components/add-villa";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,16 +31,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function VillasPage() {
   const [villas, setVillas] = useState<Villa[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [editingVilla, setEditingVilla] = useState<Villa | null>(null);
   const [isAddVillaOpen, setIsAddVillaOpen] = useState(false);
+  const [mapImageUrl, setMapImageUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
     setVillas(getVillas());
+    setMapImageUrl(getMapImageUrl());
   }, []);
 
   const handleSave = (villaData: Omit<Villa, 'id' | 'mapPosition'> & { id?: string }) => {
@@ -83,6 +88,36 @@ export default function VillasPage() {
     setIsAddVillaOpen(true);
   }
 
+  const handleMapUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const newUrl = e.target?.result as string;
+          saveMapImageUrl(newUrl);
+          setMapImageUrl(newUrl);
+          toast({
+            title: "موفق",
+            description: "نقشه با موفقیت بارگذاری شد.",
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: "لطفا یک فایل تصویری معتبر انتخاب کنید.",
+        });
+      }
+    }
+  };
+
+
   if (!isClient) {
     return null; // Or a loading spinner
   }
@@ -96,6 +131,17 @@ export default function VillasPage() {
         villa={editingVilla}
       />
       <PageHeader title="مدیریت ویلاها و ساکنین">
+         <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*"
+        />
+        <Button onClick={handleMapUploadClick} variant="outline">
+            <Upload className="ml-2 h-4 w-4" />
+            آپلود نقشه جدید
+        </Button>
         <Button onClick={handleAddNew}>افزودن ویلا</Button>
       </PageHeader>
 
@@ -104,7 +150,7 @@ export default function VillasPage() {
           <CardTitle>نقشه شماتیک شهرک</CardTitle>
         </CardHeader>
         <CardContent>
-          <SchematicMap villas={villas} />
+          <SchematicMap villas={villas} mapImageUrl={mapImageUrl} />
         </CardContent>
       </Card>
       

@@ -3,10 +3,13 @@
 
 import { mockVillas, mockPersonnel, mockBoardMembers } from "./data";
 import type { Villa, Personnel, BoardMember } from "./types";
+import { PlaceHolderImages } from "./placeholder-images";
 
 const VILLAS_KEY = 'villas';
 const PERSONNEL_KEY = 'personnel';
 const BOARD_MEMBERS_KEY = 'boardMembers';
+const MAP_IMAGE_URL_KEY = 'mapImageUrl';
+
 
 type DataType = 'villas' | 'personnel' | 'boardMembers';
 
@@ -40,7 +43,7 @@ function getData<T>(key: DataType): T[] {
     return initializeData(key, (mockMap as any)[key]);
 }
 
-function saveData<T>(key: DataType, data: T[]) {
+function saveData<T>(key: DataType | string, data: T[] | string) {
     if (typeof window === 'undefined') {
         return;
     }
@@ -77,3 +80,22 @@ export function getBoardMembers(): BoardMember[] {
 export function saveBoardMembers(boardMembers: BoardMember[]) {
     saveData<BoardMember>(BOARD_MEMBERS_KEY, boardMembers);
 }
+
+// --- Map Image URL ---
+export function getMapImageUrl(): string {
+  if (typeof window === 'undefined') {
+    return PlaceHolderImages.find(img => img.id === 'schematic-map')?.imageUrl || "";
+  }
+  const storedUrl = localStorage.getItem(MAP_IMAGE_URL_KEY);
+  if (storedUrl) {
+    return JSON.parse(storedUrl);
+  }
+  const defaultUrl = PlaceHolderImages.find(img => img.id === 'schematic-map')?.imageUrl || "";
+  localStorage.setItem(MAP_IMAGE_URL_KEY, JSON.stringify(defaultUrl));
+  return defaultUrl;
+}
+
+export function saveMapImageUrl(url: string) {
+  saveData(MAP_IMAGE_URL_KEY, url);
+}
+

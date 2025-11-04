@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import AddPersonnel from "./_components/add-personnel";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,6 +97,7 @@ export default function PersonnelPage() {
               <TableHead>نام و نام خانوادگی</TableHead>
               <TableHead>نقش</TableHead>
               <TableHead>شماره تماس</TableHead>
+              <TableHead>مدارک</TableHead>
               <TableHead>عملیات</TableHead>
             </TableRow>
           </TableHeader>
@@ -108,6 +109,17 @@ export default function PersonnelPage() {
                   <Badge variant="secondary">{person.role}</Badge>
                 </TableCell>
                 <TableCell>{person.contact}</TableCell>
+                 <TableCell>
+                  {person.documentUrl ? (
+                    <Button variant="ghost" size="icon" asChild>
+                      <a href={person.documentUrl} target="_blank" rel="noopener noreferrer">
+                        <FileText className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
                 <TableCell className="flex gap-2">
                    <Button variant="outline" size="icon" onClick={() => handleEdit(person)}>
                     <Edit className="h-4 w-4" />
