@@ -8,11 +8,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, addMonths, subMonths, getDaysInMonth, getDay, getDate, getYear, getMonth } from "date-fns-jalali";
 
-const persianMonths = [
-  "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-  "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
-];
-
 const persianWeekDays = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
 
 export default function PersianCalendar() {

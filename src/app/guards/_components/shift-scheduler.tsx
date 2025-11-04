@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -53,10 +53,26 @@ interface Schedule {
   [date: string]: string[];
 }
 
+const SCHEDULE_STORAGE_KEY = 'guardShiftSchedule';
+const SHIFT_NAMES_STORAGE_KEY = 'guardShiftNames';
+
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentShiftNames, setCurrentShiftNames] = useState<string[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const savedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    const savedShiftNames = localStorage.getItem(SHIFT_NAMES_STORAGE_KEY);
+    if (savedSchedule) {
+      setSchedule(JSON.parse(savedSchedule));
+    }
+    if (savedShiftNames) {
+      setCurrentShiftNames(JSON.parse(savedShiftNames));
+    }
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -141,9 +157,11 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     try {
         const generatedSchedule = generateLocalSchedule(data);
         setSchedule(generatedSchedule);
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(generatedSchedule));
+        localStorage.setItem(SHIFT_NAMES_STORAGE_KEY, JSON.stringify(shiftNames));
         toast({
             title: "موفقیت آمیز",
-            description: "برنامه شیفت با موفقیت ایجاد شد.",
+            description: "برنامه شیفت با موفقیت ایجاد و ذخیره شد.",
         });
     } catch (error) {
         toast({
@@ -154,6 +172,10 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     } finally {
         setIsLoading(false);
     }
+  }
+
+  if (!isClient) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -347,12 +369,10 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 </TableHeader>
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => {
-                     // Parse the date string "yyyy-MM-dd" and create a Date object in UTC
-                     const [year, month, day] = date.split('-').map(Number);
-                     const utcDate = new Date(Date.UTC(year, month - 1, day));
+                     const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
                      return (
                         <TableRow key={date}>
-                          <TableCell>{toPersianDigits(format(utcDate, 'yyyy/MM/dd'))} ({format(utcDate, 'eeee', { locale: faIR })})</TableCell>
+                          <TableCell>{toPersianDigits(format(parsedDate, 'yyyy/MM/dd'))} ({format(parsedDate, 'eeee', { locale: faIR })})</TableCell>
                            {assignedGuards.map((guard, index) => (
                                <TableCell key={index}>{guard}</TableCell>
                            ))}
@@ -372,5 +392,3 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
-
-    
