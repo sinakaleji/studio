@@ -21,7 +21,8 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { format, getDaysInMonth, addDays, getYear, getMonth, startOfMonth } from "date-fns-jalali";
+import { format, getYear } from "date-fns-jalali";
+import { generateGuardShiftScheduleAction } from "@/actions/generate-schedule-action";
 
 
 const formSchema = z.object({
@@ -40,7 +41,7 @@ interface ShiftSchedulerProps {
 }
 
 interface Schedule {
-    [date: string]: string[];
+    [date: string]: string;
 }
 
 const shiftTimes = {
@@ -65,66 +66,54 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   
   const watchedShiftType = form.watch("shiftType");
 
-  function generateSchedule(data: FormValues) {
-    const { startDate, shiftType, guardAvailability } = data;
-    const monthStartDate = startOfMonth(startDate);
-    const daysInMonth = getDaysInMonth(monthStartDate);
-    const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
-    const newSchedule: Schedule = {};
-    
-    let guardIndex = 0;
-
-    for (let i = 0; i < daysInMonth; i++) {
-        const currentDate = addDays(monthStartDate, i);
-        const dateString = format(currentDate, "yyyy-MM-dd");
-        newSchedule[dateString] = [];
-
-        for (let j = 0; j < shiftsPerDay; j++) {
-            if (guardAvailability.length === 0) {
-              newSchedule[dateString].push("نگهبان انتخاب نشده");
-              continue;
-            }
-            newSchedule[dateString].push(guardAvailability[guardIndex]);
-            guardIndex = (guardIndex + 1) % guardAvailability.length;
-        }
-    }
-    return newSchedule;
-  }
-
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setSchedule(null);
     setCurrentShiftType(data.shiftType);
 
-    // Simulate AI generation with a timeout
-    setTimeout(() => {
-        try {
-            if (data.guardAvailability.length === 0) {
-                toast({
-                    variant: "destructive",
-                    title: "خطا",
-                    description: "لطفا حداقل یک نگهبان برای برنامه ریزی انتخاب کنید.",
-                });
-                setIsLoading(false);
-                return;
-            }
-            const generatedSchedule = generateSchedule(data);
-            setSchedule(generatedSchedule);
+    try {
+        const input = {
+            ...data,
+            startDate: format(data.startDate, 'yyyy-MM-dd'),
+        };
+
+        const result = await generateGuardShiftScheduleAction(input);
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        if (result.data) {
+            setSchedule(result.data.schedule);
             toast({
                 title: "موفقیت آمیز",
-                description: "برنامه شیفت با موفقیت ایجاد شد.",
+                description: "برنامه شیفت با موفقیت توسط هوش مصنوعی ایجاد شد.",
             });
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "خطا",
-                description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
-            });
-        } finally {
-            setIsLoading(false);
         }
-    }, 500); 
+
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
+  
+  // Handler for checkbox to maintain selection order
+  const handleGuardSelection = (guardName: string, checked: boolean) => {
+    const currentSelection = form.getValues("guardAvailability") || [];
+    let newSelection;
+    if (checked) {
+      newSelection = [...currentSelection, guardName];
+    } else {
+      newSelection = currentSelection.filter((name) => name !== guardName);
+    }
+    form.setValue("guardAvailability", newSelection, { shouldValidate: true });
+  };
+
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -166,7 +155,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
               <FormField
                 control={form.control}
                 name="guardAvailability"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <div className="mb-4"><FormLabel>نگهبانان در دسترس (به ترتیب انتخاب)</FormLabel></div>
                     {guards.map((guard) => {
@@ -176,12 +165,9 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                       <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse mb-2">
                         <FormControl>
                           <Checkbox
-                            checked={field.value?.includes(guardName)}
+                            checked={form.watch('guardAvailability').includes(guardName)}
                             onCheckedChange={(checked) => {
-                              const currentSelection = field.value || [];
-                              return checked
-                                ? field.onChange([...currentSelection, guardName])
-                                : field.onChange(currentSelection.filter((value) => value !== guardName));
+                              handleGuardSelection(guardName, !!checked);
                             }}
                           />
                         </FormControl>
@@ -224,8 +210,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                                 const month = format(date, 'LLLL', { locale: options?.locale });
                                 return `${month} ${year}`;
                             },
-                            formatDay: (day, options) => toPersianDigits(format(day, 'd', { locale: options?.locale })),
-                            formatWeekday: (day, options) => format(day, 'E', { locale: options?.locale }).substring(0, 1),
+                            formatDay: (day) => toPersianDigits(format(day, 'd')),
+                            formatWeekday: (day) => format(day, 'E', { locale: faIR }).substring(0, 1),
                           }}
                         />
                       </PopoverContent>
@@ -251,7 +237,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                ایجاد برنامه شیفت
+                ایجاد برنامه شیفت با AI
               </Button>
             </CardFooter>
           </form>
@@ -278,14 +264,21 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(schedule).map(([date, assignedGuards]) => (
-                    <TableRow key={date}>
-                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee', { locale: faIR })})</TableCell>
-                       {assignedGuards.map((guard, index) => (
-                           <TableCell key={index}>{guard}</TableCell>
-                       ))}
-                    </TableRow>
-                  ))}
+                  {Object.entries(schedule).map(([date, assignedGuardsStr]) => {
+                     const assignedGuards = assignedGuardsStr.split(',').map(s => s.trim());
+                     return (
+                        <TableRow key={date}>
+                          <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee', { locale: faIR })})</TableCell>
+                           {assignedGuards.map((guard, index) => (
+                               <TableCell key={index}>{guard}</TableCell>
+                           ))}
+                           {/* Render empty cells if AI returns fewer guards than shifts */}
+                           {Array.from({ length: Math.max(0, shiftTimes[currentShiftType].length - assignedGuards.length) }).map((_, i) => (
+                              <TableCell key={`empty-${i}`}></TableCell>
+                           ))}
+                        </TableRow>
+                     )
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -295,3 +288,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    

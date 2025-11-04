@@ -15,7 +15,9 @@ export default function GuardsPage() {
     setIsClient(true);
     // This effect will run on the client side
     const allPersonnel = getPersonnel();
-    setGuards(allPersonnel.filter(p => p.role === 'نگهبان'));
+    const guardPersonnel = allPersonnel.filter(p => p.role === 'نگهبان');
+    const validGuards = guardPersonnel.filter(g => `${g.firstName} ${g.lastName}`.trim() !== '');
+    setGuards(validGuards);
   }, []);
 
   if (!isClient) {
@@ -34,3 +36,5 @@ export default function GuardsPage() {
     </main>
   );
 }
+
+    
