@@ -1,3 +1,32 @@
+
+@font-face {
+  font-family: 'Alegreya';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/Alegreya-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Alegreya';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/Alegreya-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'PT Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/PTSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'PT Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/PTSans-Bold.ttf') format('truetype');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
