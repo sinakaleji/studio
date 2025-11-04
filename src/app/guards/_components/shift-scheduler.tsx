@@ -10,7 +10,7 @@ import {
   DragDropContext,
   Droppable,
   Draggable,
-  DropResult,
+  type DropResult,
 } from "react-beautiful-dnd";
 
 import { Button } from "@/components/ui/button";
@@ -138,24 +138,22 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         return;
     }
 
-    setTimeout(() => {
-        try {
-            const generatedSchedule = generateLocalSchedule(data);
-            setSchedule(generatedSchedule);
-            toast({
-                title: "موفقیت آمیز",
-                description: "برنامه شیفت با موفقیت ایجاد شد.",
-            });
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "خطا",
-                description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, 500);
+    try {
+        const generatedSchedule = generateLocalSchedule(data);
+        setSchedule(generatedSchedule);
+        toast({
+            title: "موفقیت آمیز",
+            description: "برنامه شیفت با موفقیت ایجاد شد.",
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -349,9 +347,12 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 </TableHeader>
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => {
+                     // Parse the date string "yyyy-MM-dd" and create a Date object in UTC
+                     const [year, month, day] = date.split('-').map(Number);
+                     const utcDate = new Date(Date.UTC(year, month - 1, day));
                      return (
                         <TableRow key={date}>
-                          <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee', { locale: faIR })})</TableCell>
+                          <TableCell>{toPersianDigits(format(utcDate, 'yyyy/MM/dd'))} ({format(utcDate, 'eeee', { locale: faIR })})</TableCell>
                            {assignedGuards.map((guard, index) => (
                                <TableCell key={index}>{guard}</TableCell>
                            ))}
@@ -371,3 +372,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    
