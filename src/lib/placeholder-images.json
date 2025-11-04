@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "schematic-map",
+      "description": "A schematic map of the community layout.",
+      "imageUrl": "https://images.unsplash.com/photo-1725273578052-14575f0daa01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjb21tdW5pdHklMjBtYXB8ZW58MHx8fHwxNzYyMjg2ODQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "community map"
+    }
+  ]
 }
