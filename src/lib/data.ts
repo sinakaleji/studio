@@ -10,7 +10,7 @@ export const mockPersonnel: Personnel[] = [
 
 export const mockVillas: Villa[] = [
     { id: 'v1', villaNumber: 1, ownerFirstName: 'علیرضا', ownerLastName: 'عبادی', contact: '09123070435', isRented: false, mapPosition: { top: '10%', left: '15%' } },
-    { id: 'v2', villaNumber: 2, ownerFirstName: 'شهمیری', ownerLastName: '(احمدی) گنج', contact: '09394957777', isRented: false, mapPosition: { top: '10%', left: '35%' } },
+    { id: 'v2', villaNumber: 2, ownerFirstName: 'شهمیری', ownerLastName: '(احمدی) لنج', contact: '09394957777', isRented: false, mapPosition: { top: '10%', left: '35%' } },
     { id: 'v3', villaNumber: 3, ownerFirstName: 'احمدی', ownerLastName: '(احمدی) گنج', contact: '09121148481', isRented: false, mapPosition: { top: '10%', left: '55%' } },
     { id: 'v4', villaNumber: 4, ownerFirstName: 'احمدی', ownerLastName: 'گنج', contact: '09121122387', isRented: false, mapPosition: { top: '10%', left: '75%' } },
     { id: 'v5', villaNumber: 5, ownerFirstName: 'مندری', ownerLastName: '', contact: '09121143803', isRented: false, mapPosition: { top: '30%', left: '15%' } },
@@ -37,3 +37,4 @@ export const mockBoardMembers: BoardMember[] = [
   { id: 'b2', firstName: 'آزاده', lastName: 'شریفی', title: 'نایب رئیس', contact: '09128765432' },
   { id: 'b3', firstName: 'منصور', lastName: 'پناهی', title: 'عضو هیئت مدیره', contact: '09134567890' },
 ];
+
