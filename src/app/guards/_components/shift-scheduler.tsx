@@ -2,9 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { faIR } from 'date-fns-jalali/locale';
+
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,7 +66,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const watchedShiftType = form.watch("shiftType");
 
   function generateSchedule(data: FormValues) {
-    const { startDate, shiftType, guardAvailability, constraints } = data;
+    const { startDate, shiftType, guardAvailability } = data;
     const monthStartDate = startOfMonth(startDate);
     const daysInMonth = getDaysInMonth(monthStartDate);
     const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
@@ -94,6 +96,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     setSchedule(null);
     setCurrentShiftType(data.shiftType);
 
+    // Simulate AI generation with a timeout
     setTimeout(() => {
         try {
             if (data.guardAvailability.length === 0) {
@@ -163,34 +166,27 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
               <FormField
                 control={form.control}
                 name="guardAvailability"
-                render={() => (
+                render={({ field }) => (
                   <FormItem>
-                    <div className="mb-4"><FormLabel>نگهبانان در دسترس</FormLabel></div>
+                    <div className="mb-4"><FormLabel>نگهبانان در دسترس (به ترتیب انتخاب)</FormLabel></div>
                     {guards.map((guard) => {
                       const guardName = `${guard.firstName} ${guard.lastName}`.trim();
                       if (!guardName) return null;
                       return (
-                      <FormField
-                        key={guard.id}
-                        control={form.control}
-                        name="guardAvailability"
-                        render={({ field }) => (
-                          <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse mb-2">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(guardName)}
-                                onCheckedChange={(checked) => {
-                                  const currentSelection = field.value || [];
-                                  return checked
-                                    ? field.onChange([...currentSelection, guardName])
-                                    : field.onChange(currentSelection.filter((value) => value !== guardName));
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">{guardName}</FormLabel>
-                          </FormItem>
-                        )}
-                      />
+                      <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse mb-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(guardName)}
+                            onCheckedChange={(checked) => {
+                              const currentSelection = field.value || [];
+                              return checked
+                                ? field.onChange([...currentSelection, guardName])
+                                : field.onChange(currentSelection.filter((value) => value !== guardName));
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">{guardName}</FormLabel>
+                      </FormItem>
                     )})}
                     <FormMessage />
                   </FormItem>
@@ -207,13 +203,13 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                         <FormControl>
                           <Button variant="outline" className={cn("w-full justify-start text-right font-normal", !field.value && "text-muted-foreground")}>
                             <CalendarIcon className="ml-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'MMMM yyyy') : <span>یک ماه انتخاب کنید</span>}
+                            {field.value ? format(field.value, 'MMMM yyyy', {locale: faIR}) : <span>یک ماه انتخاب کنید</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
-                          locale={{ code: 'fa' }}
+                          locale={faIR}
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
@@ -222,6 +218,15 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                           captionLayout="dropdown-buttons"
                           fromYear={getYear(new Date()) - 5}
                           toYear={getYear(new Date()) + 5}
+                          formatters={{
+                            formatCaption: (date, options) => {
+                                const year = toPersianDigits(format(date, 'yyyy', { locale: options?.locale }));
+                                const month = format(date, 'LLLL', { locale: options?.locale });
+                                return `${month} ${year}`;
+                            },
+                            formatDay: (day, options) => toPersianDigits(format(day, 'd', { locale: options?.locale })),
+                            formatWeekday: (day, options) => format(day, 'E', { locale: options?.locale }).substring(0, 1),
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
@@ -275,7 +280,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => (
                     <TableRow key={date}>
-                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee')})</TableCell>
+                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee', { locale: faIR })})</TableCell>
                        {assignedGuards.map((guard, index) => (
                            <TableCell key={index}>{guard}</TableCell>
                        ))}
