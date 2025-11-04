@@ -176,7 +176,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                                 checked={field.value?.includes(guardName)}
                                 onCheckedChange={(checked) => {
                                   return checked
-                                    ? field.onChange([...field.value, guardName])
+                                    ? field.onChange([...(field.value || []), guardName])
                                     : field.onChange(field.value?.filter((value) => value !== guardName));
                                 }}
                               />
