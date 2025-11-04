@@ -1,6 +1,8 @@
+
 export interface Personnel {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: 'نگهبان' | 'خدمات' | 'باغبان' | 'مدیر';
   contact: string;
 }
@@ -8,9 +10,11 @@ export interface Personnel {
 export interface Villa {
   id: string;
   villaNumber: number;
-  ownerName: string;
+  ownerFirstName: string;
+  ownerLastName: string;
   isRented: boolean;
-  tenantName?: string;
+  tenantFirstName?: string;
+  tenantLastName?: string;
   tenantContact?: string;
   contact?: string;
   mapPosition: { top: string; left: string };
@@ -18,7 +22,8 @@ export interface Villa {
 
 export interface BoardMember {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   title: 'رئیس هیئت مدیره' | 'نایب رئیس' | 'عضو هیئت مدیره' | 'بازرس';
   contact: string;
 }

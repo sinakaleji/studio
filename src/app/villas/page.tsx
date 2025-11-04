@@ -125,7 +125,7 @@ export default function VillasPage() {
             {villas.map((villa) => (
               <TableRow key={villa.id}>
                 <TableCell className="font-medium">{toPersianDigits(villa.villaNumber)}</TableCell>
-                <TableCell>{villa.ownerName}</TableCell>
+                <TableCell>{`${villa.ownerFirstName} ${villa.ownerLastName}`}</TableCell>
                 <TableCell>{villa.contact || "-"}</TableCell>
                 <TableCell>
                   {villa.isRented ? (
@@ -134,7 +134,7 @@ export default function VillasPage() {
                     <Badge variant="secondary">مالک ساکن</Badge>
                   )}
                 </TableCell>
-                <TableCell>{villa.tenantName || "-"}</TableCell>
+                <TableCell>{villa.tenantFirstName ? `${villa.tenantFirstName} ${villa.tenantLastName}` : "-"}</TableCell>
                 <TableCell>{villa.tenantContact || "-"}</TableCell>
                 <TableCell className="flex gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleEdit(villa)}>

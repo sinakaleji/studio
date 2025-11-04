@@ -103,7 +103,7 @@ export default function BoardPage() {
           <TableBody>
             {boardMembers.map((member) => (
               <TableRow key={member.id}>
-                <TableCell className="font-medium">{member.name}</TableCell>
+                <TableCell className="font-medium">{`${member.firstName} ${member.lastName}`}</TableCell>
                 <TableCell>
                   <Badge>{member.title}</Badge>
                 </TableCell>

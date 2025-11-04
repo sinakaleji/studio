@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -69,7 +70,7 @@ export default function SchematicMap({ villas }: SchematicMapProps) {
               <div className="grid gap-4 py-4">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">مالک:</span>
-                  <span className="font-semibold">{selectedVilla.ownerName}</span>
+                  <span className="font-semibold">{`${selectedVilla.ownerFirstName} ${selectedVilla.ownerLastName}`}</span>
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">شماره تماس:</span>
@@ -87,7 +88,7 @@ export default function SchematicMap({ villas }: SchematicMapProps) {
                   <>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">مستاجر:</span>
-                      <span className="font-semibold">{selectedVilla.tenantName}</span>
+                      <span className="font-semibold">{`${selectedVilla.tenantFirstName} ${selectedVilla.tenantLastName}`}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">تماس مستاجر:</span>

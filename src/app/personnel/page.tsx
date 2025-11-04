@@ -103,7 +103,7 @@ export default function PersonnelPage() {
           <TableBody>
             {personnel.map((person) => (
               <TableRow key={person.id}>
-                <TableCell className="font-medium">{person.name}</TableCell>
+                <TableCell className="font-medium">{`${person.firstName} ${person.lastName}`}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{person.role}</Badge>
                 </TableCell>

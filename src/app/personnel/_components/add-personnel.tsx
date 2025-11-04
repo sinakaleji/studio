@@ -24,30 +24,34 @@ interface AddPersonnelProps {
 }
 
 export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }: AddPersonnelProps) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<Personnel['role'] | ''>('');
   const [contact, setContact] = useState("");
 
   useEffect(() => {
     if (personnel) {
-      setName(personnel.name);
+      setFirstName(personnel.firstName);
+      setLastName(personnel.lastName);
       setRole(personnel.role);
       setContact(personnel.contact);
     } else {
-      setName("");
+      setFirstName("");
+      setLastName("");
       setRole("");
       setContact("");
     }
   }, [personnel, isOpen]);
 
   const handleSubmit = () => {
-    if (!name || !role) {
+    if (!firstName || !lastName || !role) {
       // Add user feedback
       return;
     }
     onSave({
       id: personnel?.id,
-      name,
+      firstName,
+      lastName,
       role: role as Personnel['role'],
       contact,
     });
@@ -65,10 +69,16 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
+            <Label htmlFor="firstName" className="text-right">
               نام
             </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="lastName" className="text-right">
+              نام خانوادگی
+            </Label>
+            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="role" className="text-right">

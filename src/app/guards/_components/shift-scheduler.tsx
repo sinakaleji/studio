@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -119,7 +120,9 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 render={() => (
                   <FormItem>
                     <div className="mb-4"><FormLabel>نگهبانان در دسترس</FormLabel></div>
-                    {guards.map((guard) => (
+                    {guards.map((guard) => {
+                      const guardName = `${guard.firstName} ${guard.lastName}`.trim();
+                      return (
                       <FormField
                         key={guard.id}
                         control={form.control}
@@ -128,19 +131,19 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                           <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse">
                             <FormControl>
                               <Checkbox
-                                checked={field.value?.includes(guard.name)}
+                                checked={field.value?.includes(guardName)}
                                 onCheckedChange={(checked) => {
                                   return checked
-                                    ? field.onChange([...field.value, guard.name])
-                                    : field.onChange(field.value?.filter((value) => value !== guard.name));
+                                    ? field.onChange([...field.value, guardName])
+                                    : field.onChange(field.value?.filter((value) => value !== guardName));
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">{guard.name}</FormLabel>
+                            <FormLabel className="font-normal">{guardName}</FormLabel>
                           </FormItem>
                         )}
                       />
-                    ))}
+                    )})}
                     <FormMessage />
                   </FormItem>
                 )}
