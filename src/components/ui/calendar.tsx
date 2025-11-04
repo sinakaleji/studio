@@ -1,13 +1,17 @@
+
 "use client"
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker, DropdownProps } from "react-day-picker"
+import { faIR } from 'date-fns/locale';
+import { format, getYear } from 'date-fns-jalali';
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 import { ScrollArea } from "./scroll-area"
+import { toPersianDigits } from "@/lib/utils";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -15,12 +19,23 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  locale = faIR,
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      locale={locale}
+      formatters={{
+        formatCaption: (date, options) => {
+          const year = toPersianDigits(format(date, 'yyyy', { locale: options?.locale }));
+          const month = format(date, 'LLLL', { locale: options?.locale });
+          return `${month} ${year}`;
+        },
+        formatDay: (day) => toPersianDigits(day.getDate()),
+        formatWeekday: (day) => format(day, 'E', { locale: faIR }),
+      }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -32,14 +47,14 @@ function Calendar({
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        nav_button_previous: "absolute right-1", // Flipped for RTL
+        nav_button_next: "absolute left-1", // Flipped for RTL
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-l-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-r-md last:[&:has([aria-selected])]:rounded-l-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
@@ -58,10 +73,10 @@ function Calendar({
       }}
       components={{
         IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
+          <ChevronRight className={cn("h-4 w-4", className)} {...props} /> // Flipped for RTL
         ),
         IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
+          <ChevronLeft className={cn("h-4 w-4", className)} {...props} /> // Flipped for RTL
         ),
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
           const options = React.Children.toArray(children) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
@@ -105,5 +120,3 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
-
-    

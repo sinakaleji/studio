@@ -19,8 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns-jalali";
-import { getDaysInMonth, addDays, getYear, getMonth } from "date-fns";
+import { format, getDaysInMonth, addDays, getYear, getMonth, startOfMonth } from "date-fns-jalali";
 
 
 const formSchema = z.object({
@@ -58,13 +57,14 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       guardAvailability: [],
       constraints: "",
       shiftType: "12-hour",
+      startDate: new Date(),
     },
   });
 
   function generateSchedule(data: FormValues) {
     const { startDate, shiftType, guardAvailability } = data;
     // Set start date to the first day of the selected month
-    const monthStartDate = new Date(getYear(startDate), getMonth(startDate), 1);
+    const monthStartDate = startOfMonth(startDate);
     const daysInMonth = getDaysInMonth(monthStartDate);
 
     const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
@@ -207,13 +207,15 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
+                          locale={{ code: 'fa-IR', options: { weekStartsOn: 6 } }}
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
+                          defaultMonth={field.value}
                           captionLayout="dropdown-buttons"
-                          fromYear={getYear(new Date()) - 1}
-                          toYear={getYear(new Date()) + 1}
+                          fromYear={getYear(new Date()) - 5}
+                          toYear={getYear(new Date()) + 5}
                         />
                       </PopoverContent>
                     </Popover>
@@ -282,5 +284,3 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
-
-    
