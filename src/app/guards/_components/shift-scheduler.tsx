@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parseISO } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -369,7 +369,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 </TableHeader>
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => {
-                     const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
+                     const parsedDate = parseISO(date);
                      return (
                         <TableRow key={date}>
                           <TableCell>{toPersianDigits(format(parsedDate, 'yyyy/MM/dd'))} ({format(parsedDate, 'eeee', { locale: faIR })})</TableCell>
@@ -392,3 +392,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    
