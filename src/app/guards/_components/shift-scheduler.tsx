@@ -2,17 +2,20 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { faIR } from 'date-fns-jalali/locale';
-
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "react-beautiful-dnd";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,17 +23,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
 import { format, getYear, getDaysInMonth, addDays, startOfMonth } from "date-fns-jalali";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+const shiftConfigSchema = z.object({
+  name: z.string().min(1),
+  start: z.string().min(1),
+  end: z.string().min(1),
+});
 
 const formSchema = z.object({
   shiftType: z.enum(["12-hour", "8-hour"], { required_error: "نوع شیفت را انتخاب کنید." }),
-  guardAvailability: z.array(z.string()).refine((value) => value.length > 0, {
-    message: "حداقل یک نگهبان را انتخاب کنید.",
-  }),
+  selectedGuards: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "حداقل یک نگهبان را انتخاب کنید."),
   startDate: z.date({ required_error: "تاریخ شروع الزامی است." }),
   constraints: z.string().optional(),
+  "12-hour-shifts": z.array(shiftConfigSchema).length(2),
+  "8-hour-shifts": z.array(shiftConfigSchema).length(3),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,37 +50,63 @@ interface ShiftSchedulerProps {
 }
 
 interface Schedule {
-    [date: string]: string;
+  [date: string]: string[];
 }
-
-const shiftTimes = {
-    "12-hour": ["شیفت روز (۷ الی ۱۹)", "شیفت شب (۱۹ الی ۷)"],
-    "8-hour": ["شیفت صبح (۷ الی ۱۵)", "شیفت عصر (۱۵ الی ۲۳)", "شیفت شب (۲۳ الی ۷)"],
-};
 
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentShiftType, setCurrentShiftType] = useState<"12-hour" | "8-hour">("12-hour");
+  const [currentShiftNames, setCurrentShiftNames] = useState<string[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      guardAvailability: [],
-      constraints: "",
       shiftType: "12-hour",
+      selectedGuards: [],
       startDate: new Date(),
+      constraints: "",
+      "12-hour-shifts": [
+        { name: "شیفت روز", start: "07:00", end: "19:00" },
+        { name: "شیفت شب", start: "19:00", end: "07:00" },
+      ],
+      "8-hour-shifts": [
+        { name: "شیفت صبح", start: "07:00", end: "15:00" },
+        { name: "شیفت عصر", start: "15:00", end: "23:00" },
+        { name: "شیفت شب", start: "23:00", end: "07:00" },
+      ],
     },
+  });
+
+  const { fields, append, remove, move } = useFieldArray({
+    control: form.control,
+    name: "selectedGuards",
   });
   
   const watchedShiftType = form.watch("shiftType");
 
+  const handleGuardSelect = (guard: Personnel) => {
+    const isSelected = fields.some(g => g.id === guard.id);
+    if (!isSelected) {
+        append({ id: guard.id, name: `${guard.firstName} ${guard.lastName}`.trim() });
+    }
+  };
+
+  const handleGuardRemove = (index: number) => {
+    remove(index);
+  };
+  
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    move(result.source.index, result.destination.index);
+  };
+
   const generateLocalSchedule = (data: FormValues): Schedule => {
-    const { guardAvailability, shiftType, startDate } = data;
+    const { selectedGuards, shiftType, startDate } = data;
+    const shifts = data[`${shiftType}-shifts`];
     const newSchedule: Schedule = {};
     const monthStartDate = startOfMonth(startDate);
     const daysInMonth = getDaysInMonth(monthStartDate);
-    const numShifts = shiftType === "12-hour" ? 2 : 3;
+    const numShifts = shifts.length;
     let guardIndex = 0;
 
     for (let i = 0; i < daysInMonth; i++) {
@@ -79,10 +115,10 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         
         const dailyGuards: string[] = [];
         for (let j = 0; j < numShifts; j++) {
-            dailyGuards.push(guardAvailability[guardIndex % guardAvailability.length]);
+            dailyGuards.push(selectedGuards[guardIndex % selectedGuards.length].name);
             guardIndex++;
         }
-        newSchedule[dateKey] = dailyGuards.join(', ');
+        newSchedule[dateKey] = dailyGuards;
     }
     return newSchedule;
   };
@@ -90,20 +126,18 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setSchedule(null);
-    setCurrentShiftType(data.shiftType);
 
-    if (data.guardAvailability.length < 2 && data.shiftType === "12-hour") {
-        toast({ variant: "destructive", title: "خطا", description: "برای شیفت ۱۲ ساعته حداقل ۲ نگهبان انتخاب کنید."});
+    const shifts = data[`${data.shiftType}-shifts`];
+    const shiftNames = shifts.map(s => `${s.name} (${toPersianDigits(s.start)} - ${toPersianDigits(s.end)})`);
+    setCurrentShiftNames(shiftNames);
+
+    const minGuards = data.shiftType === "12-hour" ? 2 : 3;
+     if (data.selectedGuards.length < minGuards) {
+        toast({ variant: "destructive", title: "خطا", description: `برای شیفت ${toPersianDigits(data.shiftType === '12-hour' ? 12 : 8)} ساعته حداقل ${toPersianDigits(minGuards)} نگهبان انتخاب کنید.`});
         setIsLoading(false);
         return;
     }
-    if (data.guardAvailability.length < 3 && data.shiftType === "8-hour") {
-        toast({ variant: "destructive", title: "خطا", description: "برای شیفت ۸ ساعته حداقل ۳ نگهبان انتخاب کنید."});
-        setIsLoading(false);
-        return;
-    }
 
-    // Simulate async operation for better UX
     setTimeout(() => {
         try {
             const generatedSchedule = generateLocalSchedule(data);
@@ -112,7 +146,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 title: "موفقیت آمیز",
                 description: "برنامه شیفت با موفقیت ایجاد شد.",
             });
-
         } catch (error) {
             toast({
                 variant: "destructive",
@@ -124,18 +157,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         }
     }, 500);
   }
-  
-  const handleGuardSelection = (guardName: string, checked: boolean) => {
-    const currentSelection = form.getValues("guardAvailability") || [];
-    let newSelection;
-    if (checked) {
-      newSelection = [...currentSelection, guardName];
-    } else {
-      newSelection = currentSelection.filter((name) => name !== guardName);
-    }
-    form.setValue("guardAvailability", newSelection, { shouldValidate: true });
-  };
-
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -165,41 +186,82 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
-                     <FormDescription>
-                      {watchedShiftType === '12-hour' 
-                        ? 'شیفت روز: ۷ الی ۱۹ - شیفت شب: ۱۹ الی ۷'
-                        : 'شیفت صبح: ۷ الی ۱۵ - شیفت عصر: ۱۵ الی ۲۳ - شیفت شب: ۲۳ الی ۷'}
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="guardAvailability"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-4"><FormLabel>نگهبانان در دسترس (به ترتیب انتخاب)</FormLabel></div>
-                    {guards.map((guard) => {
-                      const guardName = `${guard.firstName} ${guard.lastName}`.trim();
-                      if (!guardName) return null;
-                      return (
-                      <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse mb-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={form.watch('guardAvailability').includes(guardName)}
-                            onCheckedChange={(checked) => {
-                              handleGuardSelection(guardName, !!checked);
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">{guardName}</FormLabel>
-                      </FormItem>
-                    )})}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
+              {watchedShiftType === '12-hour' && (
+                <div className="grid gap-2 p-2 border rounded-md">
+                  <FormLabel>زمانبندی شیفت ۱۲ ساعته</FormLabel>
+                  {form.watch('12-hour-shifts').map((_, index) => (
+                    <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                      <FormField name={`12-hour-shifts.${index}.name`} render={({ field }) => <Input {...field} placeholder="نام شیفت" />} />
+                      <FormField name={`12-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} placeholder="شروع" dir="ltr" />} />
+                      <FormField name={`12-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} placeholder="پایان" dir="ltr" />} />
+                    </div>
+                  ))}
+                </div>
+              )}
+               {watchedShiftType === '8-hour' && (
+                <div className="grid gap-2 p-2 border rounded-md">
+                   <FormLabel>زمانبندی شیفت ۸ ساعته</FormLabel>
+                  {form.watch('8-hour-shifts').map((_, index) => (
+                    <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                      <FormField name={`8-hour-shifts.${index}.name`} render={({ field }) => <Input {...field} placeholder="نام شیفت" />} />
+                      <FormField name={`8-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} placeholder="شروع" dir="ltr" />} />
+                      <FormField name={`8-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} placeholder="پایان" dir="ltr" />} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+               <div className="space-y-2">
+                <FormLabel>نگهبانان (به ترتیب شیفت)</FormLabel>
+                <div className="p-2 border rounded-md min-h-[5rem]">
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="selectedGuards">
+                      {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef}>
+                          {fields.map((guard, index) => (
+                            <Draggable key={guard.id} draggableId={guard.id} index={index}>
+                              {(provided) => (
+                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="flex items-center justify-between p-2 mb-1 bg-accent/50 rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                    <span>{guard.name}</span>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleGuardRemove(index)}><X className="h-4 w-4"/></Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                </div>
+                <FormField
+                    name="selectedGuards"
+                    render={() => (<FormMessage />)}
+                />
+
+                <div className="flex flex-wrap gap-2">
+                    {guards.map(guard => {
+                        const guardName = `${guard.firstName} ${guard.lastName}`.trim();
+                        if (!guardName) return null;
+                        const isSelected = fields.some(g => g.id === guard.id);
+                        return (
+                            <Button key={guard.id} type="button" variant={isSelected ? "secondary" : "outline"} size="sm" onClick={() => handleGuardSelect(guard)} disabled={isSelected}>
+                                {guardName}
+                            </Button>
+                        )
+                    })}
+                </div>
+              </div>
+
+
               <FormField
                 control={form.control}
                 name="startDate"
@@ -280,14 +342,13 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[120px]">تاریخ</TableHead>
-                    {shiftTimes[currentShiftType].map((shiftName, index) => (
+                    {currentShiftNames.map((shiftName, index) => (
                          <TableHead key={index} className="min-w-[150px]">{shiftName}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(schedule).map(([date, assignedGuardsStr]) => {
-                     const assignedGuards = assignedGuardsStr.split(',').map(s => s.trim());
+                  {Object.entries(schedule).map(([date, assignedGuards]) => {
                      return (
                         <TableRow key={date}>
                           <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee', { locale: faIR })})</TableCell>
@@ -295,7 +356,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                                <TableCell key={index}>{guard}</TableCell>
                            ))}
                            {/* Render empty cells if fewer guards than shifts */}
-                           {Array.from({ length: Math.max(0, shiftTimes[currentShiftType].length - assignedGuards.length) }).map((_, i) => (
+                           {Array.from({ length: Math.max(0, currentShiftNames.length - assignedGuards.length) }).map((_, i) => (
                               <TableCell key={`empty-${i}`}></TableCell>
                            ))}
                         </TableRow>
@@ -310,5 +371,3 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
-
-    
