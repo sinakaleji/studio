@@ -20,7 +20,7 @@ import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns-jalali";
-import { getDaysInMonth, addDays } from "date-fns";
+import { getDaysInMonth, addDays, getYear, getMonth } from "date-fns";
 
 
 const formSchema = z.object({
@@ -42,33 +42,46 @@ interface Schedule {
     [date: string]: string[];
 }
 
+const shiftTimes = {
+    "12-hour": ["شیفت روز (۷ الی ۱۹)", "شیفت شب (۱۹ الی ۷)"],
+    "8-hour": ["شیفت صبح (۷ الی ۱۵)", "شیفت عصر (۱۵ الی ۲۳)", "شیفت شب (۲۳ الی ۷)"],
+};
 
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentShiftType, setCurrentShiftType] = useState<"12-hour" | "8-hour">("12-hour");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       guardAvailability: [],
       constraints: "",
+      shiftType: "12-hour",
     },
   });
 
   function generateSchedule(data: FormValues) {
     const { startDate, shiftType, guardAvailability } = data;
-    const daysInMonth = getDaysInMonth(startDate);
+    // Set start date to the first day of the selected month
+    const monthStartDate = new Date(getYear(startDate), getMonth(startDate), 1);
+    const daysInMonth = getDaysInMonth(monthStartDate);
+
     const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
     const newSchedule: Schedule = {};
     
     let guardIndex = 0;
 
     for (let i = 0; i < daysInMonth; i++) {
-        const currentDate = addDays(startDate, i);
+        const currentDate = addDays(monthStartDate, i);
         const dateString = format(currentDate, "yyyy-MM-dd");
         newSchedule[dateString] = [];
 
         for (let j = 0; j < shiftsPerDay; j++) {
+            if (guardAvailability.length === 0) {
+              newSchedule[dateString].push("نگهبان انتخاب نشده");
+              continue;
+            }
             newSchedule[dateString].push(guardAvailability[guardIndex]);
             guardIndex = (guardIndex + 1) % guardAvailability.length;
         }
@@ -79,12 +92,19 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setSchedule(null);
+    setCurrentShiftType(data.shiftType);
     
     // Simulate generation delay
     setTimeout(() => {
         try {
             if (data.guardAvailability.length === 0) {
-                throw new Error("لطفا حداقل یک نگهبان برای برنامه ریزی انتخاب کنید.");
+                toast({
+                    variant: "destructive",
+                    title: "خطا",
+                    description: "لطفا حداقل یک نگهبان برای برنامه ریزی انتخاب کنید.",
+                });
+                setIsLoading(false);
+                return;
             }
             const newSchedule = generateSchedule(data);
             setSchedule(newSchedule);
@@ -175,18 +195,26 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 name="startDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>تاریخ شروع ماه</FormLabel>
+                    <FormLabel>ماه مورد نظر</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant="outline" className={cn("w-full justify-start text-right font-normal", !field.value && "text-muted-foreground")}>
                             <CalendarIcon className="ml-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'yyyy/MM/dd') : <span>یک تاریخ انتخاب کنید</span>}
+                            {field.value ? format(field.value, 'MMMM yyyy') : <span>یک ماه انتخاب کنید</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          captionLayout="dropdown-buttons"
+                          fromYear={getYear(new Date()) - 1}
+                          toYear={getYear(new Date()) + 1}
+                        />
                       </PopoverContent>
                     </Popover>
                     <FormMessage />
@@ -200,7 +228,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   <FormItem>
                     <FormLabel>محدودیت‌ها (اختیاری)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="این بخش در حال حاضر برای برنامه ریزی استفاده نمی شود" {...field} disabled />
+                      <Textarea placeholder="هر نگهبان در چه روزهایی نمی‌تواند شیفت باشد؟" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -230,15 +258,19 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>تاریخ</TableHead>
-                    <TableHead>شیفت‌ها</TableHead>
+                    <TableHead className="min-w-[120px]">تاریخ</TableHead>
+                    {shiftTimes[currentShiftType].map((shiftName, index) => (
+                         <TableHead key={index} className="min-w-[150px]">{shiftName}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => (
                     <TableRow key={date}>
-                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))}</TableCell>
-                      <TableCell>{assignedGuards.join(" - ")}</TableCell>
+                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))} ({format(new Date(date), 'eeee')})</TableCell>
+                       {assignedGuards.map((guard, index) => (
+                           <TableCell key={index}>{guard}</TableCell>
+                       ))}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -250,3 +282,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    
