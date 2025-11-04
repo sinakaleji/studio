@@ -5,6 +5,7 @@ const SETTINGS_KEY = 'appSettings';
 const defaultSettings: AppSettings = {
     communityName: "نیلارز",
     developerName: "سینا رایانه",
+    personnelRoles: ['نگهبان', 'خدمات', 'باغبان', 'مدیر', 'مسئول تاسیسات', 'نظافتچی'],
 };
 
 export function getSettings(): AppSettings {
@@ -14,11 +15,18 @@ export function getSettings(): AppSettings {
     try {
         const settingsStr = localStorage.getItem(SETTINGS_KEY);
         if (settingsStr) {
-            return JSON.parse(settingsStr);
+            const storedSettings = JSON.parse(settingsStr);
+            // Ensure personnelRoles exists
+            if (!storedSettings.personnelRoles) {
+                storedSettings.personnelRoles = defaultSettings.personnelRoles;
+            }
+            return storedSettings;
         }
     } catch (error) {
         console.error("Failed to read settings from localStorage", error);
     }
+    // If nothing in localStorage, set and return default
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
     return defaultSettings;
 }
 

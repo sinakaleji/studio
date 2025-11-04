@@ -3,7 +3,7 @@ export interface Personnel {
   id: string;
   firstName: string;
   lastName: string;
-  role: 'نگهبان' | 'خدمات' | 'باغبان' | 'مدیر';
+  role: string;
   contact: string;
 }
 
@@ -11,6 +11,7 @@ export interface Villa {
   id: string;
   villaNumber: number;
   ownerFirstName: string;
+
   ownerLastName: string;
   isRented: boolean;
   tenantFirstName?: string;
@@ -31,4 +32,5 @@ export interface BoardMember {
 export interface AppSettings {
     communityName: string;
     developerName: string;
+    personnelRoles: string[];
 }

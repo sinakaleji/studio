@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getSettings } from "@/lib/settings";
 import type { Personnel } from "@/lib/types";
 import { useEffect, useState } from "react";
 
@@ -28,8 +29,12 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<Personnel['role'] | ''>('');
   const [contact, setContact] = useState("");
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
 
   useEffect(() => {
+    const settings = getSettings();
+    setAvailableRoles(settings.personnelRoles);
+
     if (personnel) {
       setFirstName(personnel.firstName || "");
       setLastName(personnel.lastName || "");
@@ -89,10 +94,9 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
                 <SelectValue placeholder="نقش را انتخاب کنید" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="guard">نگهبان</SelectItem>
-                <SelectItem value="services">خدمات</SelectItem>
-                <SelectItem value="gardener">باغبان</SelectItem>
-                <SelectItem value="manager">مدیر</SelectItem>
+                {availableRoles.map(role => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

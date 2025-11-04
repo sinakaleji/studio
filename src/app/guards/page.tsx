@@ -13,12 +13,18 @@ export default function GuardsPage() {
 
   useEffect(() => {
     setIsClient(true);
+    // This effect will run on the client side
     const allPersonnel = getPersonnel();
     setGuards(allPersonnel.filter(p => p.role === 'نگهبان'));
   }, []);
 
   if (!isClient) {
-    return null; // Or a loading spinner
+    return (
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <PageHeader title="شیفت نگهبانان" />
+        <div>در حال بارگذاری...</div>
+      </main>
+    );
   }
 
   return (
