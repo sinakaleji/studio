@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -60,6 +60,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       startDate: new Date(),
     },
   });
+  
+  const watchedShiftType = form.watch("shiftType");
 
   function generateSchedule(data: FormValues) {
     const { startDate, shiftType, guardAvailability, constraints } = data;
@@ -68,8 +70,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
     const newSchedule: Schedule = {};
     
-    // Simple round-robin assignment for now.
-    // In a future step, this can be enhanced to respect constraints.
     let guardIndex = 0;
 
     for (let i = 0; i < daysInMonth; i++) {
@@ -94,7 +94,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     setSchedule(null);
     setCurrentShiftType(data.shiftType);
 
-    // Simulate AI generation or complex logic
     setTimeout(() => {
         try {
             if (data.guardAvailability.length === 0) {
@@ -121,7 +120,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         } finally {
             setIsLoading(false);
         }
-    }, 500); // Delay for user to see loading state
+    }, 500); 
   }
 
   return (
@@ -152,6 +151,11 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
+                     <FormDescription>
+                      {watchedShiftType === '12-hour' 
+                        ? 'شیفت روز: ۷ الی ۱۹ - شیفت شب: ۱۹ الی ۷'
+                        : 'شیفت صبح: ۷ الی ۱۵ - شیفت عصر: ۱۵ الی ۲۳ - شیفت شب: ۲۳ الی ۷'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -286,5 +290,3 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
-
-    
