@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parseISO } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -105,10 +105,17 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         setCurrentShiftNames(JSON.parse(savedShiftNames));
       }
       if (savedFormValues) {
-        const parsedData = JSON.parse(savedFormValues);
-        // Date needs to be converted back to a Date object
-        parsedData.startDate = parseISO(parsedData.startDate);
-        form.reset(parsedData);
+        try {
+            const parsedData = JSON.parse(savedFormValues);
+            // Date needs to be converted back to a Date object
+            if (parsedData.startDate) {
+                parsedData.startDate = new Date(parsedData.startDate);
+            }
+            form.reset(parsedData);
+        } catch (e) {
+            console.error("Could not parse saved form values", e);
+            localStorage.removeItem(FORM_VALUES_STORAGE_KEY);
+        }
       }
     }
   }, [isClient, form]);
@@ -178,9 +185,11 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     try {
         const generatedSchedule = generateLocalSchedule(data);
         setSchedule(generatedSchedule);
-        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(generatedSchedule));
-        localStorage.setItem(SHIFT_NAMES_STORAGE_KEY, JSON.stringify(shiftNames));
-        localStorage.setItem(FORM_VALUES_STORAGE_KEY, JSON.stringify(data));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(generatedSchedule));
+          localStorage.setItem(SHIFT_NAMES_STORAGE_KEY, JSON.stringify(shiftNames));
+          localStorage.setItem(FORM_VALUES_STORAGE_KEY, JSON.stringify(data));
+        }
         toast({
             title: "موفقیت آمیز",
             description: "برنامه شیفت با موفقیت ایجاد و ذخیره شد.",
@@ -263,7 +272,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <div className="p-2 border rounded-md min-h-[5rem]">
                   {isClient && (
                     <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="selectedGuards">
+                      <Droppable droppableId="selectedGuards" isDropDisabled={false}>
                         {(provided) => (
                           <div {...provided.droppableProps} ref={provided.innerRef}>
                             {fields.map((guard, index) => (
@@ -393,7 +402,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 </TableHeader>
                 <TableBody>
                   {Object.entries(schedule).map(([date, assignedGuards]) => {
-                     const parsedDate = parseISO(date);
+                     const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
                      return (
                         <TableRow key={date}>
                           <TableCell>{toPersianDigits(format(parsedDate, 'yyyy/MM/dd'))} ({format(parsedDate, 'eeee', { locale: faIR })})</TableCell>
@@ -415,5 +424,4 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
-
     
