@@ -91,7 +91,7 @@ export default function PersonnelPage() {
       <PageHeader title="مدیریت پرسنل">
         <Button onClick={handleAddNew}>افزودن پرسنل</Button>
       </PageHeader>
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

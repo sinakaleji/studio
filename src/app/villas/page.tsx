@@ -175,14 +175,14 @@ export default function VillasPage() {
       </PageHeader>
 
       <Card>
-        <CardHeader className="flex flex-row justify-between items-center">
+        <CardHeader className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
             <div className="space-y-1.5">
                 <CardTitle>نقشه شماتیک شهرک</CardTitle>
                 {isEditMode && (
                     <CardDescription>حالت ویرایش فعال است. آیکون‌ها را برای جابجایی بکشید.</CardDescription>
                 )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
                 {isEditMode ? (
                     <>
                         <Button onClick={saveMapChanges} size="sm">
@@ -213,17 +213,17 @@ export default function VillasPage() {
         </CardContent>
       </Card>
       
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>شماره ویلا</TableHead>
-              <TableHead>مالک</TableHead>
-              <TableHead>شماره تماس</TableHead>
+              <TableHead className="min-w-[100px]">شماره ویلا</TableHead>
+              <TableHead className="min-w-[150px]">مالک</TableHead>
+              <TableHead className="min-w-[120px]">شماره تماس</TableHead>
               <TableHead>وضعیت</TableHead>
-              <TableHead>مستاجر</TableHead>
-              <TableHead>تماس مستاجر</TableHead>
-              <TableHead>عملیات</TableHead>
+              <TableHead className="min-w-[150px]">مستاجر</TableHead>
+              <TableHead className="min-w-[120px]">تماس مستاجر</TableHead>
+              <TableHead className="min-w-[120px]">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

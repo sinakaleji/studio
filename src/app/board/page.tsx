@@ -90,7 +90,7 @@ export default function BoardPage() {
       <PageHeader title="اعضای هیئت مدیره">
         <Button onClick={handleAddNew}>افزودن عضو</Button>
       </PageHeader>
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
