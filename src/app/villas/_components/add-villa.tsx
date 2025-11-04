@@ -36,8 +36,8 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
   useEffect(() => {
     if (villa) {
       setVillaNumber(villa.villaNumber.toString());
-      setOwnerFirstName(villa.ownerFirstName);
-      setOwnerLastName(villa.ownerLastName);
+      setOwnerFirstName(villa.ownerFirstName || "");
+      setOwnerLastName(villa.ownerLastName || "");
       setContact(villa.contact || "");
       setIsRented(villa.isRented);
       setTenantFirstName(villa.tenantFirstName || "");

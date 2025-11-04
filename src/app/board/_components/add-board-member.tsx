@@ -31,10 +31,10 @@ export default function AddBoardMember({ isOpen, onOpenChange, onSave, member }:
 
   useEffect(() => {
     if (member) {
-      setFirstName(member.firstName);
-      setLastName(member.lastName);
-      setTitle(member.title);
-      setContact(member.contact);
+      setFirstName(member.firstName || "");
+      setLastName(member.lastName || "");
+      setTitle(member.title || "");
+      setContact(member.contact || "");
     } else {
       setFirstName("");
       setLastName("");

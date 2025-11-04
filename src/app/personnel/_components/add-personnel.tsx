@@ -31,10 +31,10 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
 
   useEffect(() => {
     if (personnel) {
-      setFirstName(personnel.firstName);
-      setLastName(personnel.lastName);
-      setRole(personnel.role);
-      setContact(personnel.contact);
+      setFirstName(personnel.firstName || "");
+      setLastName(personnel.lastName || "");
+      setRole(personnel.role || "");
+      setContact(personnel.contact || "");
     } else {
       setFirstName("");
       setLastName("");
