@@ -21,8 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { format, getYear } from "date-fns-jalali";
-import { generateGuardShiftScheduleAction } from "@/actions/generate-schedule-action";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth } from "date-fns-jalali";
 
 
 const formSchema = z.object({
@@ -66,43 +65,66 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   
   const watchedShiftType = form.watch("shiftType");
 
+  const generateLocalSchedule = (data: FormValues): Schedule => {
+    const { guardAvailability, shiftType, startDate } = data;
+    const newSchedule: Schedule = {};
+    const monthStartDate = startOfMonth(startDate);
+    const daysInMonth = getDaysInMonth(monthStartDate);
+    const numShifts = shiftType === "12-hour" ? 2 : 3;
+    let guardIndex = 0;
+
+    for (let i = 0; i < daysInMonth; i++) {
+        const currentDate = addDays(monthStartDate, i);
+        const dateKey = format(currentDate, 'yyyy-MM-dd');
+        
+        const dailyGuards: string[] = [];
+        for (let j = 0; j < numShifts; j++) {
+            dailyGuards.push(guardAvailability[guardIndex % guardAvailability.length]);
+            guardIndex++;
+        }
+        newSchedule[dateKey] = dailyGuards.join(', ');
+    }
+    return newSchedule;
+  };
+
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setSchedule(null);
     setCurrentShiftType(data.shiftType);
 
-    try {
-        const input = {
-            ...data,
-            startDate: format(data.startDate, 'yyyy-MM-dd'),
-        };
+    if (data.guardAvailability.length < 2 && data.shiftType === "12-hour") {
+        toast({ variant: "destructive", title: "خطا", description: "برای شیفت ۱۲ ساعته حداقل ۲ نگهبان انتخاب کنید."});
+        setIsLoading(false);
+        return;
+    }
+    if (data.guardAvailability.length < 3 && data.shiftType === "8-hour") {
+        toast({ variant: "destructive", title: "خطا", description: "برای شیفت ۸ ساعته حداقل ۳ نگهبان انتخاب کنید."});
+        setIsLoading(false);
+        return;
+    }
 
-        const result = await generateGuardShiftScheduleAction(input);
-
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        
-        if (result.data) {
-            setSchedule(result.data.schedule);
+    // Simulate async operation for better UX
+    setTimeout(() => {
+        try {
+            const generatedSchedule = generateLocalSchedule(data);
+            setSchedule(generatedSchedule);
             toast({
                 title: "موفقیت آمیز",
-                description: "برنامه شیفت با موفقیت توسط هوش مصنوعی ایجاد شد.",
+                description: "برنامه شیفت با موفقیت ایجاد شد.",
             });
-        }
 
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "خطا",
-            description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
-        });
-    } finally {
-        setIsLoading(false);
-    }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "خطا",
+                description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, 500);
   }
   
-  // Handler for checkbox to maintain selection order
   const handleGuardSelection = (guardName: string, checked: boolean) => {
     const currentSelection = form.getValues("guardAvailability") || [];
     let newSelection;
@@ -227,7 +249,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   <FormItem>
                     <FormLabel>محدودیت‌ها (اختیاری)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="مثال: فرهنگ در روزهای جمعه نمی‌تواند شیفت باشد." {...field} />
+                      <Textarea placeholder="این فیلد در حال حاضر توسط سیستم استفاده نمی‌شود." {...field} readOnly />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -237,7 +259,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                ایجاد برنامه شیفت با AI
+                ایجاد برنامه شیفت
               </Button>
             </CardFooter>
           </form>
@@ -272,7 +294,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                            {assignedGuards.map((guard, index) => (
                                <TableCell key={index}>{guard}</TableCell>
                            ))}
-                           {/* Render empty cells if AI returns fewer guards than shifts */}
+                           {/* Render empty cells if fewer guards than shifts */}
                            {Array.from({ length: Math.max(0, shiftTimes[currentShiftType].length - assignedGuards.length) }).map((_, i) => (
                               <TableCell key={`empty-${i}`}></TableCell>
                            ))}

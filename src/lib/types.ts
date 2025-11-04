@@ -1,11 +1,17 @@
 
+
+export interface Document {
+  name: string;
+  url: string;
+}
+
 export interface Personnel {
   id: string;
   firstName: string;
   lastName: string;
   role: string;
   contact: string;
-  documentUrl?: string;
+  documents?: Document[];
 }
 
 export interface Villa {

@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function PersonnelPage() {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -110,12 +111,24 @@ export default function PersonnelPage() {
                 </TableCell>
                 <TableCell>{person.contact}</TableCell>
                  <TableCell>
-                  {person.documentUrl ? (
-                    <Button variant="ghost" size="icon" asChild>
-                      <a href={person.documentUrl} target="_blank" rel="noopener noreferrer">
-                        <FileText className="h-4 w-4" />
-                      </a>
-                    </Button>
+                  {person.documents && person.documents.length > 0 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          مشاهده مدارک ({person.documents.length})
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {person.documents.map((doc, index) => (
+                          <DropdownMenuItem key={index} asChild>
+                             <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+                                <FileText className="h-4 w-4" />
+                                {doc.name || `مدرک ${index + 1}`}
+                            </a>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (
                     "-"
                   )}

@@ -14,10 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getSettings } from "@/lib/settings";
-import type { Personnel } from "@/lib/types";
+import type { Personnel, Document } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import Image from "next/image";
+
 
 interface AddPersonnelProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<Personnel['role'] | ''>('');
   const [contact, setContact] = useState("");
-  const [documentUrl, setDocumentUrl] = useState<string | undefined>(undefined);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -44,13 +46,13 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
       setLastName(personnel.lastName || "");
       setRole(personnel.role || "");
       setContact(personnel.contact || "");
-      setDocumentUrl(personnel.documentUrl || undefined);
+      setDocuments(personnel.documents || []);
     } else {
       setFirstName("");
       setLastName("");
       setRole("");
       setContact("");
-      setDocumentUrl(undefined);
+      setDocuments([]);
     }
   }, [personnel, isOpen]);
 
@@ -65,18 +67,20 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
       lastName,
       role: role as Personnel['role'],
       contact,
-      documentUrl,
+      documents,
     });
     onOpenChange(false);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setDocumentUrl(e.target?.result as string);
+          const newDocuments = [...documents];
+          newDocuments[index].url = e.target?.result as string;
+          setDocuments(newDocuments);
         };
         reader.readAsDataURL(file);
       } else {
@@ -89,6 +93,22 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
     }
   };
 
+  const handleAddDocument = () => {
+    setDocuments([...documents, { name: "", url: "" }]);
+  };
+
+  const handleRemoveDocument = (index: number) => {
+    const newDocuments = documents.filter((_, i) => i !== index);
+    setDocuments(newDocuments);
+  };
+  
+  const handleDocumentNameChange = (value: string, index: number) => {
+      const newDocuments = [...documents];
+      newDocuments[index].name = value;
+      setDocuments(newDocuments);
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -98,7 +118,7 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
             اطلاعات پرسنل جدید را در اینجا وارد کنید.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="firstName" className="text-right">
               نام
@@ -132,20 +152,37 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
             </Label>
             <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" />
           </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="document" className="text-right">
-              آپلود مدرک
-            </Label>
-            <Input id="document" type="file" onChange={handleFileChange} className="col-span-3" accept="image/*" />
-          </div>
-          {documentUrl && (
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">پیش‌نمایش</Label>
-                <div className="col-span-3">
-                    <Image src={documentUrl} alt="پیش‌نمایش مدرک" width={80} height={80} className="rounded-md object-cover" />
-                </div>
+          
+          <div className="space-y-4 pt-4">
+             <div className="flex justify-between items-center">
+                <Label>مدارک</Label>
+                <Button variant="outline" size="sm" onClick={handleAddDocument}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    افزودن مدرک
+                </Button>
              </div>
-          )}
+             {documents.map((doc, index) => (
+                <div key={index} className="space-y-2 p-3 border rounded-md">
+                    <div className="flex items-center gap-2">
+                        <Input 
+                            placeholder="نام مدرک (مثال: کارت ملی)"
+                            value={doc.name}
+                            onChange={(e) => handleDocumentNameChange(e.target.value, index)}
+                        />
+                         <Button variant="destructive" size="icon" onClick={() => handleRemoveDocument(index)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <Input id={`document-${index}`} type="file" onChange={(e) => handleFileChange(e, index)} accept="image/*" />
+                    {doc.url && (
+                        <div className="mt-2">
+                            <Image src={doc.url} alt={`پیش‌نمایش ${doc.name}`} width={60} height={60} className="rounded-md object-cover" />
+                        </div>
+                    )}
+                </div>
+             ))}
+          </div>
+
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleSubmit}>ذخیره</Button>
