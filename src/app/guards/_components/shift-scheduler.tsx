@@ -197,8 +197,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   {form.watch('12-hour-shifts').map((_, index) => (
                     <div key={index} className="grid grid-cols-3 gap-2 items-center">
                       <FormField name={`12-hour-shifts.${index}.name`} render={({ field }) => <Input {...field} placeholder="نام شیفت" />} />
-                      <FormField name={`12-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} placeholder="شروع" dir="ltr" />} />
-                      <FormField name={`12-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} placeholder="پایان" dir="ltr" />} />
+                      <FormField name={`12-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} type="time" placeholder="شروع" />} />
+                      <FormField name={`12-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} type="time" placeholder="پایان" />} />
                     </div>
                   ))}
                 </div>
@@ -209,8 +209,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   {form.watch('8-hour-shifts').map((_, index) => (
                     <div key={index} className="grid grid-cols-3 gap-2 items-center">
                       <FormField name={`8-hour-shifts.${index}.name`} render={({ field }) => <Input {...field} placeholder="نام شیفت" />} />
-                      <FormField name={`8-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} placeholder="شروع" dir="ltr" />} />
-                      <FormField name={`8-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} placeholder="پایان" dir="ltr" />} />
+                      <FormField name={`8-hour-shifts.${index}.start`} render={({ field }) => <Input {...field} type="time" placeholder="شروع" />} />
+                      <FormField name={`8-hour-shifts.${index}.end`} render={({ field }) => <Input {...field} type="time" placeholder="پایان" />} />
                     </div>
                   ))}
                 </div>
