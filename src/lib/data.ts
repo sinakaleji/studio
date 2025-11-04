@@ -1,11 +1,10 @@
 import type { Personnel, Villa, BoardMember } from './types';
 
 export const mockPersonnel: Personnel[] = [
-  { id: 'p1', name: 'علی رضایی', role: 'نگهبان', contact: '09123456789' },
-  { id: 'p2', name: 'مریم حسینی', role: 'خدمات', contact: '09123456788' },
-  { id: 'p3', name: 'حسن محمدی', role: 'باغبان', contact: '09123456787' },
-  { id: 'p4', name: 'رضا قاسمی', role: 'نگهبان', contact: '09123456786' },
-  { id: 'p5', name: 'سعید احمدی', role: 'نگهبان', contact: '09123456785' },
+  { id: 'p1', name: 'اسحاق', role: 'خدمات', contact: '0910-305-3794' },
+  { id: 'p2', name: 'کابچی', role: 'باغبان', contact: '0911-744-4694' },
+  { id: 'p3', name: 'فرهنگ', role: 'نگهبان', contact: '0933-488-1914' },
+  { id: 'p4', name: 'ناصر رمضان', role: 'نگهبان', contact: '09**-***-****' },
 ];
 
 export const mockVillas: Villa[] = [
