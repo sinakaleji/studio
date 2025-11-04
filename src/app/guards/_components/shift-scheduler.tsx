@@ -55,24 +55,23 @@ interface Schedule {
 
 const SCHEDULE_STORAGE_KEY = 'guardShiftSchedule';
 const SHIFT_NAMES_STORAGE_KEY = 'guardShiftNames';
+const FORM_VALUES_STORAGE_KEY = 'guardShiftFormValues';
+
+
+const useClientOnly = () => {
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+    return isClient;
+}
+
 
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentShiftNames, setCurrentShiftNames] = useState<string[]>([]);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    const savedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-    const savedShiftNames = localStorage.getItem(SHIFT_NAMES_STORAGE_KEY);
-    if (savedSchedule) {
-      setSchedule(JSON.parse(savedSchedule));
-    }
-    if (savedShiftNames) {
-      setCurrentShiftNames(JSON.parse(savedShiftNames));
-    }
-  }, []);
+  const isClient = useClientOnly();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -92,6 +91,28 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       ],
     },
   });
+
+  useEffect(() => {
+    if (isClient) {
+      const savedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      const savedShiftNames = localStorage.getItem(SHIFT_NAMES_STORAGE_KEY);
+      const savedFormValues = localStorage.getItem(FORM_VALUES_STORAGE_KEY);
+
+      if (savedSchedule) {
+        setSchedule(JSON.parse(savedSchedule));
+      }
+      if (savedShiftNames) {
+        setCurrentShiftNames(JSON.parse(savedShiftNames));
+      }
+      if (savedFormValues) {
+        const parsedData = JSON.parse(savedFormValues);
+        // Date needs to be converted back to a Date object
+        parsedData.startDate = parseISO(parsedData.startDate);
+        form.reset(parsedData);
+      }
+    }
+  }, [isClient, form]);
+
 
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
@@ -159,6 +180,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         setSchedule(generatedSchedule);
         localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(generatedSchedule));
         localStorage.setItem(SHIFT_NAMES_STORAGE_KEY, JSON.stringify(shiftNames));
+        localStorage.setItem(FORM_VALUES_STORAGE_KEY, JSON.stringify(data));
         toast({
             title: "موفقیت آمیز",
             description: "برنامه شیفت با موفقیت ایجاد و ذخیره شد.",
@@ -239,28 +261,30 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                <div className="space-y-2">
                 <FormLabel>نگهبانان (به ترتیب شیفت)</FormLabel>
                 <div className="p-2 border rounded-md min-h-[5rem]">
-                  <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="selectedGuards">
-                      {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                          {fields.map((guard, index) => (
-                            <Draggable key={guard.id} draggableId={guard.id} index={index}>
-                              {(provided) => (
-                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="flex items-center justify-between p-2 mb-1 bg-accent/50 rounded-md">
-                                  <div className="flex items-center gap-2">
-                                    <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                                    <span>{guard.name}</span>
+                  {isClient && (
+                    <DragDropContext onDragEnd={onDragEnd}>
+                      <Droppable droppableId="selectedGuards">
+                        {(provided) => (
+                          <div {...provided.droppableProps} ref={provided.innerRef}>
+                            {fields.map((guard, index) => (
+                              <Draggable key={guard.id} draggableId={guard.id} index={index}>
+                                {(provided) => (
+                                  <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="flex items-center justify-between p-2 mb-1 bg-accent/50 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                      <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                      <span>{guard.name}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleGuardRemove(index)}><X className="h-4 w-4"/></Button>
                                   </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleGuardRemove(index)}><X className="h-4 w-4"/></Button>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  )}
                 </div>
                 <FormField
                     name="selectedGuards"
@@ -391,6 +415,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
-}
 
     
