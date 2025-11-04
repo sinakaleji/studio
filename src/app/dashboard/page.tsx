@@ -1,17 +1,41 @@
+
+"use client";
+
+import { useState, useEffect } from "react";
 import PageHeader from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Building, UserCheck } from "lucide-react";
 import Clock from "./_components/clock";
 import PersianCalendar from "./_components/persian-calendar";
-import { mockVillas, mockPersonnel } from "@/lib/data";
+import { getVillas, getPersonnel } from "@/lib/data-manager";
 import { toPersianDigits } from "@/lib/utils";
 
 export default function DashboardPage() {
+  const [villasCount, setVillasCount] = useState(0);
+  const [personnelCount, setPersonnelCount] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    setVillasCount(getVillas().length);
+    setPersonnelCount(getPersonnel().length);
+  }, []);
+
   const stats = [
-    { title: "تعداد کل ویلاها", value: toPersianDigits(mockVillas.length), icon: Building },
-    { title: "تعداد پرسنل", value: toPersianDigits(mockPersonnel.length), icon: Users },
-    { title: "ساکنین", value: toPersianDigits(mockVillas.length), icon: UserCheck },
+    { title: "تعداد کل ویلاها", value: toPersianDigits(villasCount), icon: Building },
+    { title: "تعداد پرسنل", value: toPersianDigits(personnelCount), icon: Users },
+    { title: "ساکنین", value: toPersianDigits(villasCount), icon: UserCheck },
   ];
+
+  if (!isClient) {
+    // You can render a loading skeleton here
+    return (
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <PageHeader title="داشبورد" />
+            <div className="text-center">درحال بارگذاری...</div>
+        </main>
+    )
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
