@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { generateGuardShiftScheduleAction } from "@/actions/generate-schedule-action";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,18 +15,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { format as formatFa } from "date-fns-jalali";
+import { format } from "date-fns-jalali";
+import { getDaysInMonth, addDays } from "date-fns";
 
 
 const formSchema = z.object({
   shiftType: z.enum(["12-hour", "8-hour"], { required_error: "نوع شیفت را انتخاب کنید." }),
-  guardAvailability: z.array(z.string()).refine((value) => value.some((item) => item), {
+  guardAvailability: z.array(z.string()).refine((value) => value.length > 0, {
     message: "حداقل یک نگهبان را انتخاب کنید.",
   }),
   startDate: z.date({ required_error: "تاریخ شروع الزامی است." }),
@@ -40,10 +38,14 @@ interface ShiftSchedulerProps {
   guards: Personnel[];
 }
 
+interface Schedule {
+    [date: string]: string[];
+}
+
+
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
-  const [schedule, setSchedule] = useState<Record<string, string> | null>(null);
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -53,33 +55,53 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     },
   });
 
+  function generateSchedule(data: FormValues) {
+    const { startDate, shiftType, guardAvailability } = data;
+    const daysInMonth = getDaysInMonth(startDate);
+    const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
+    const newSchedule: Schedule = {};
+    
+    let guardIndex = 0;
+
+    for (let i = 0; i < daysInMonth; i++) {
+        const currentDate = addDays(startDate, i);
+        const dateString = format(currentDate, "yyyy-MM-dd");
+        newSchedule[dateString] = [];
+
+        for (let j = 0; j < shiftsPerDay; j++) {
+            newSchedule[dateString].push(guardAvailability[guardIndex]);
+            guardIndex = (guardIndex + 1) % guardAvailability.length;
+        }
+    }
+    return newSchedule;
+  }
+
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setSchedule(null);
-    try {
-      const result = await generateGuardShiftScheduleAction({
-        ...data,
-        startDate: format(data.startDate, "yyyy-MM-dd"),
-      });
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
-      setSchedule(result.data?.schedule ?? null);
-      toast({
-        title: "موفقیت آمیز",
-        description: "برنامه شیفت با موفقیت ایجاد شد.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Simulate generation delay
+    setTimeout(() => {
+        try {
+            if (data.guardAvailability.length === 0) {
+                throw new Error("لطفا حداقل یک نگهبان برای برنامه ریزی انتخاب کنید.");
+            }
+            const newSchedule = generateSchedule(data);
+            setSchedule(newSchedule);
+            toast({
+                title: "موفقیت آمیز",
+                description: "برنامه شیفت با موفقیت ایجاد شد.",
+            });
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "خطا",
+                description: error instanceof Error ? error.message : "خطایی در ایجاد برنامه رخ داد.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, 500);
   }
 
   return (
@@ -102,11 +124,11 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                       <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
                         <FormItem className="flex items-center space-x-2 space-x-reverse">
                           <FormControl><RadioGroupItem value="12-hour" /></FormControl>
-                          <FormLabel className="font-normal">۱۲ ساعته</FormLabel>
+                          <FormLabel className="font-normal">۱۲ ساعته (۲ شیفت)</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2 space-x-reverse">
                           <FormControl><RadioGroupItem value="8-hour" /></FormControl>
-                          <FormLabel className="font-normal">۸ ساعته</FormLabel>
+                          <FormLabel className="font-normal">۸ ساعته (۳ شیفت)</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -128,7 +150,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                         control={form.control}
                         name="guardAvailability"
                         render={({ field }) => (
-                          <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse">
+                          <FormItem key={guard.id} className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse mb-2">
                             <FormControl>
                               <Checkbox
                                 checked={field.value?.includes(guardName)}
@@ -159,7 +181,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                         <FormControl>
                           <Button variant="outline" className={cn("w-full justify-start text-right font-normal", !field.value && "text-muted-foreground")}>
                             <CalendarIcon className="ml-2 h-4 w-4" />
-                            {field.value ? formatFa(field.value, 'yyyy/MM/dd') : <span>یک تاریخ انتخاب کنید</span>}
+                            {field.value ? format(field.value, 'yyyy/MM/dd') : <span>یک تاریخ انتخاب کنید</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -178,7 +200,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   <FormItem>
                     <FormLabel>محدودیت‌ها (اختیاری)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="مثال: علی رضایی جمعه‌ها تعطیل است." {...field} />
+                      <Textarea placeholder="این بخش در حال حاضر برای برنامه ریزی استفاده نمی شود" {...field} disabled />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,14 +231,14 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>تاریخ</TableHead>
-                    <TableHead>نگهبان</TableHead>
+                    <TableHead>شیفت‌ها</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(schedule).map(([date, guard]) => (
+                  {Object.entries(schedule).map(([date, assignedGuards]) => (
                     <TableRow key={date}>
-                      <TableCell>{toPersianDigits(formatFa(new Date(date), 'yyyy/MM/dd'))}</TableCell>
-                      <TableCell>{guard}</TableCell>
+                      <TableCell>{toPersianDigits(format(new Date(date), 'yyyy/MM/dd'))}</TableCell>
+                      <TableCell>{assignedGuards.join(" - ")}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
