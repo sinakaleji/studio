@@ -16,18 +16,22 @@ export function getSettings(): AppSettings {
         const settingsStr = localStorage.getItem(SETTINGS_KEY);
         if (settingsStr) {
             const storedSettings = JSON.parse(settingsStr);
-            // Ensure personnelRoles exists
+            // Ensure personnelRoles exists for backward compatibility
             if (!storedSettings.personnelRoles) {
                 storedSettings.personnelRoles = defaultSettings.personnelRoles;
             }
             return storedSettings;
+        } else {
+             // If nothing in localStorage, set and return default
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
+            return defaultSettings;
         }
     } catch (error) {
         console.error("Failed to read settings from localStorage", error);
+         // Fallback to default and try to save it
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
+        return defaultSettings;
     }
-    // If nothing in localStorage, set and return default
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
-    return defaultSettings;
 }
 
 export function saveSettings(settings: AppSettings) {
