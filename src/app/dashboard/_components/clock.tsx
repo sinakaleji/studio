@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,22 +7,16 @@ import { Clock as ClockIcon } from "lucide-react";
 import { toPersianDigits } from "@/lib/utils";
 
 export default function Clock() {
-  const [time, setTime] = useState<Date | null>(null);
+  const [time, setTime] = useState<Date>(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
     }, 1000);
-    // Set initial time on client mount
-    if (time === null) {
-      setTime(new Date());
-    }
     return () => clearInterval(timer);
-  }, [time]);
+  }, []);
 
-  const formattedTime = time
-    ? toPersianDigits(time.toLocaleTimeString("fa-IR", { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
-    : "در حال بارگذاری...";
+  const formattedTime = toPersianDigits(time.toLocaleTimeString("fa-IR", { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
   return (
     <Card>
