@@ -72,6 +72,10 @@ export default function SchematicMap({ villas }: SchematicMapProps) {
                   <span className="font-semibold">{selectedVilla.ownerName}</span>
                 </div>
                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">شماره تماس:</span>
+                    <span className="font-semibold">{selectedVilla.contact}</span>
+                </div>
+                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">وضعیت:</span>
                   {selectedVilla.isRented ? (
                     <Badge variant="destructive">اجاره</Badge>

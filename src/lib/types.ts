@@ -12,6 +12,7 @@ export interface Villa {
   isRented: boolean;
   tenantName?: string;
   tenantContact?: string;
+  contact?: string;
   mapPosition: { top: string; left: string };
 }
 
@@ -20,4 +21,9 @@ export interface BoardMember {
   name: string;
   title: 'رئیس هیئت مدیره' | 'نایب رئیس' | 'عضو هیئت مدیره' | 'بازرس';
   contact: string;
+}
+
+export interface AppSettings {
+    communityName: string;
+    developerName: string;
 }

@@ -38,6 +38,7 @@ export default function VillasPage() {
             <TableRow>
               <TableHead>شماره ویلا</TableHead>
               <TableHead>مالک</TableHead>
+              <TableHead>شماره تماس</TableHead>
               <TableHead>وضعیت</TableHead>
               <TableHead>مستاجر</TableHead>
               <TableHead>تماس مستاجر</TableHead>
@@ -48,6 +49,7 @@ export default function VillasPage() {
               <TableRow key={villa.id}>
                 <TableCell className="font-medium">{toPersianDigits(villa.villaNumber)}</TableCell>
                 <TableCell>{villa.ownerName}</TableCell>
+                <TableCell>{villa.contact || "-"}</TableCell>
                 <TableCell>
                   {villa.isRented ? (
                     <Badge variant="destructive">اجاره</Badge>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, Shield, Building, UserSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Building, UserSquare, Settings } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const navItems = [
   { href: '/villas', label: 'مدیریت ویلاها', icon: Building },
   { href: '/board', label: 'هیئت مدیره', icon: UserSquare },
   { href: '/guards', label: 'شیفت نگهبانان', icon: Shield },
+  { href: '/settings', label: 'تنظیمات', icon: Settings },
 ];
 
 const VillaIcon = (props: React.SVGProps<SVGSVGElement>) => (

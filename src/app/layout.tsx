@@ -4,8 +4,8 @@ import { Toaster } from '@/components/ui/toaster';
 import LayoutProvider from '@/components/layout-provider';
 
 export const metadata: Metadata = {
-  title: 'Roshan Community',
-  description: 'Roshan Community Management',
+  title: 'Nilarose Community',
+  description: 'Nilarose Community Management',
 };
 
 export default function RootLayout({
