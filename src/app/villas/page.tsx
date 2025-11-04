@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import PageHeader from "@/components/page-header";
-import { getVillas, saveVillas, getMapImageUrl, saveMapImageUrl } from "@/lib/data-manager";
-import type { Villa } from "@/lib/types";
+import { getVillas, saveVillas, getBuildings, saveBuildings, getMapImageUrl, saveMapImageUrl } from "@/lib/data-manager";
+import type { Villa, Building } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -18,8 +18,9 @@ import { toPersianDigits } from "@/lib/utils";
 import SchematicMap from "./_components/schematic-map";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import AddVilla from "./_components/add-villa";
+import AddBuilding from "./_components/add-building";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Upload, Map, Check, X } from "lucide-react";
+import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,24 +34,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
+type MapItem = (Villa & { itemType: 'villa' }) | (Building & { itemType: 'building' });
+
 export default function VillasPage() {
   const [villas, setVillas] = useState<Villa[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [editingVilla, setEditingVilla] = useState<Villa | null>(null);
+  const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [isAddVillaOpen, setIsAddVillaOpen] = useState(false);
+  const [isAddBuildingOpen, setIsAddBuildingOpen] = useState(false);
   const [mapImageUrl, setMapImageUrl] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
-  const [tempVillas, setTempVillas] = useState<Villa[]>([]);
+  const [tempMapItems, setTempMapItems] = useState<MapItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
     setVillas(getVillas());
+    setBuildings(getBuildings());
     setMapImageUrl(getMapImageUrl());
   }, []);
 
-  const handleSave = (villaData: Omit<Villa, 'id' | 'mapPosition'> & { id?: string }) => {
+  const handleSaveVilla = (villaData: Omit<Villa, 'id' | 'mapPosition'> & { id?: string }) => {
     let updatedVillas;
     if (villaData.id) {
       // Edit existing
@@ -73,20 +80,56 @@ export default function VillasPage() {
     setIsAddVillaOpen(false);
   };
   
-  const handleDelete = (villaId: string) => {
+  const handleDeleteVilla = (villaId: string) => {
     const updatedVillas = villas.filter((v) => v.id !== villaId);
     saveVillas(updatedVillas);
     setVillas(updatedVillas);
   };
 
-  const handleEdit = (villa: Villa) => {
+  const handleEditVilla = (villa: Villa) => {
     setEditingVilla(villa);
     setIsAddVillaOpen(true);
   };
 
-  const handleAddNew = () => {
+  const handleAddNewVilla = () => {
     setEditingVilla(null);
     setIsAddVillaOpen(true);
+  }
+
+  const handleSaveBuilding = (buildingData: Omit<Building, 'id' | 'mapPosition'> & { id?: string }) => {
+    let updatedBuildings;
+    if (buildingData.id) {
+      updatedBuildings = buildings.map((b) =>
+        b.id === buildingData.id ? { ...b, ...buildingData } : b
+      );
+    } else {
+      const newBuilding: Building = {
+        ...buildingData,
+        id: `bldg${Date.now()}`,
+        mapPosition: { top: '50%', left: '50%' },
+      };
+      updatedBuildings = [...buildings, newBuilding];
+    }
+    saveBuildings(updatedBuildings);
+    setBuildings(updatedBuildings);
+    setEditingBuilding(null);
+    setIsAddBuildingOpen(false);
+  };
+
+  const handleDeleteBuilding = (buildingId: string) => {
+    const updatedBuildings = buildings.filter((b) => b.id !== buildingId);
+    saveBuildings(updatedBuildings);
+    setBuildings(updatedBuildings);
+  };
+  
+  const handleEditBuilding = (building: Building) => {
+    setEditingBuilding(building);
+    setIsAddBuildingOpen(true);
+  };
+
+  const handleAddNewBuilding = () => {
+    setEditingBuilding(null);
+    setIsAddBuildingOpen(true);
   }
 
   const handleMapUploadClick = () => {
@@ -118,31 +161,41 @@ export default function VillasPage() {
     }
   };
 
+  const mapItems: MapItem[] = [
+    ...villas.map(v => ({ ...v, itemType: 'villa' as const })),
+    ...buildings.map(b => ({ ...b, itemType: 'building' as const })),
+  ];
+  
   const toggleEditMode = () => {
     if (!isEditMode) {
-      // Entering edit mode, save current state
-      setTempVillas(villas);
+      setTempMapItems(mapItems);
     }
     setIsEditMode(!isEditMode);
   };
 
   const saveMapChanges = () => {
-    saveVillas(tempVillas);
-    setVillas(tempVillas);
+    const newVillas = tempMapItems.filter(item => item.itemType === 'villa').map(({ itemType, ...rest }) => rest as Villa);
+    const newBuildings = tempMapItems.filter(item => item.itemType === 'building').map(({ itemType, ...rest }) => rest as Building);
+    
+    saveVillas(newVillas);
+    setVillas(newVillas);
+    
+    saveBuildings(newBuildings);
+    setBuildings(newBuildings);
+
     setIsEditMode(false);
     toast({ title: "موفق", description: "چیدمان نقشه ذخیره شد." });
   };
 
   const cancelMapChanges = () => {
-    // Revert to original positions
-    setTempVillas(villas);
     setIsEditMode(false);
+    setTempMapItems([]);
   };
   
-  const handleVillaMove = (villaId: string, position: { top: string; left: string }) => {
-    setTempVillas(currentVillas => 
-        currentVillas.map(v => 
-            v.id === villaId ? { ...v, mapPosition: position } : v
+  const handleItemMove = (itemId: string, position: { top: string; left: string }) => {
+    setTempMapItems(currentItems => 
+        currentItems.map(item => 
+            item.id === itemId ? { ...item, mapPosition: position } : item
         )
     );
   };
@@ -156,10 +209,17 @@ export default function VillasPage() {
        <AddVilla
         isOpen={isAddVillaOpen}
         onOpenChange={setIsAddVillaOpen}
-        onSave={handleSave}
+        onSave={handleSaveVilla}
         villa={editingVilla}
       />
-      <PageHeader title="مدیریت ویلاها و ساکنین">
+       <AddBuilding
+        isOpen={isAddBuildingOpen}
+        onOpenChange={setIsAddBuildingOpen}
+        onSave={handleSaveBuilding}
+        building={editingBuilding}
+       />
+
+      <PageHeader title="مدیریت ویلاها و ساختمان‌ها">
          <input
           type="file"
           ref={fileInputRef}
@@ -171,7 +231,11 @@ export default function VillasPage() {
             <Upload className="ml-2 h-4 w-4" />
             آپلود نقشه
         </Button>
-        <Button onClick={handleAddNew}>افزودن ویلا</Button>
+        <Button onClick={handleAddNewBuilding}>
+          <BuildingIcon className="ml-2 h-4 w-4" />
+          افزودن ساختمان
+        </Button>
+        <Button onClick={handleAddNewVilla}>افزودن ویلا</Button>
       </PageHeader>
 
       <Card>
@@ -204,11 +268,12 @@ export default function VillasPage() {
         </CardHeader>
         <CardContent>
           <SchematicMap 
-            villas={isEditMode ? tempVillas : villas} 
+            items={isEditMode ? tempMapItems : mapItems} 
             mapImageUrl={mapImageUrl} 
             isEditMode={isEditMode}
-            onVillaMove={handleVillaMove}
-            onEditVilla={handleEdit}
+            onItemMove={handleItemMove}
+            onEditVilla={handleEditVilla}
+            onEditBuilding={handleEditBuilding}
             />
         </CardContent>
       </Card>
@@ -242,7 +307,7 @@ export default function VillasPage() {
                 <TableCell>{villa.tenantFirstName ? `${villa.tenantFirstName} ${villa.tenantLastName}` : "-"}</TableCell>
                 <TableCell>{villa.tenantContact || "-"}</TableCell>
                 <TableCell className="flex gap-2">
-                  <Button variant="outline" size="icon" onClick={() => handleEdit(villa)}>
+                  <Button variant="outline" size="icon" onClick={() => handleEditVilla(villa)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
@@ -260,7 +325,62 @@ export default function VillasPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>انصراف</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(villa.id)}>
+                        <AlertDialogAction onClick={() => handleDeleteVilla(villa.id)}>
+                          حذف
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+       <div className="border rounded-lg overflow-x-auto mt-8">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>نام ساختمان</TableHead>
+              <TableHead>نوع</TableHead>
+              <TableHead>عملیات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {buildings.map((building) => (
+              <TableRow key={building.id}>
+                <TableCell className="font-medium">{building.name}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{
+                    {
+                      'security': 'نگهبانی',
+                      'facility': 'تاسیسات',
+                      'office': 'اداری',
+                      'other': 'سایر'
+                    }[building.type]
+                  }</Badge>
+                </TableCell>
+                <TableCell className="flex gap-2">
+                  <Button variant="outline" size="icon" onClick={() => handleEditBuilding(building)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                   <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="icon">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>آیا از حذف مطمئن هستید؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           این عمل قابل بازگشت نیست. این ساختمان برای همیشه حذف خواهد شد.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>انصراف</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteBuilding(building.id)}>
                           حذف
                         </AlertDialogAction>
                       </AlertDialogFooter>

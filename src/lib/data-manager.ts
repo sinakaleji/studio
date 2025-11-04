@@ -1,17 +1,18 @@
 
 'use client';
 
-import { mockVillas, mockPersonnel, mockBoardMembers } from "./data";
-import type { Villa, Personnel, BoardMember } from "./types";
+import { mockVillas, mockPersonnel, mockBoardMembers, mockBuildings } from "./data";
+import type { Villa, Personnel, BoardMember, Building } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 
 const VILLAS_KEY = 'villas';
 const PERSONNEL_KEY = 'personnel';
 const BOARD_MEMBERS_KEY = 'boardMembers';
+const BUILDINGS_KEY = 'buildings';
 const MAP_IMAGE_URL_KEY = 'mapImageUrl';
 
 
-type DataType = 'villas' | 'personnel' | 'boardMembers';
+type DataType = 'villas' | 'personnel' | 'boardMembers' | 'buildings';
 
 function initializeData<T>(key: string, mockData: T[]): T[] {
     if (typeof window === 'undefined') {
@@ -35,7 +36,8 @@ function getData<T>(key: DataType): T[] {
     const mockMap = {
         [VILLAS_KEY]: mockVillas,
         [PERSONNEL_KEY]: mockPersonnel,
-        [BOARD_MEMBERS_KEY]: mockBoardMembers
+        [BOARD_MEMBERS_KEY]: mockBoardMembers,
+        [BUILDINGS_KEY]: mockBuildings
     };
     if (typeof window === 'undefined') {
         return mockMap[key] as T[];
@@ -81,6 +83,15 @@ export function saveBoardMembers(boardMembers: BoardMember[]) {
     saveData<BoardMember>(BOARD_MEMBERS_KEY, boardMembers);
 }
 
+// --- Buildings ---
+export function getBuildings(): Building[] {
+    return getData<Building>(BUILDINGS_KEY);
+}
+
+export function saveBuildings(buildings: Building[]) {
+    saveData<Building>(BUILDINGS_KEY, buildings);
+}
+
 // --- Map Image URL ---
 export function getMapImageUrl(): string {
   if (typeof window === 'undefined') {
@@ -98,4 +109,3 @@ export function getMapImageUrl(): string {
 export function saveMapImageUrl(url: string) {
   saveData(MAP_IMAGE_URL_KEY, url);
 }
-

@@ -2,73 +2,97 @@
 "use client";
 
 import Image from "next/image";
-import type { Villa } from "@/lib/types";
-import { useState, useRef, type MouseEvent } from "react";
+import type { Villa, Building } from "@/lib/types";
+import { useState, useRef, type MouseEvent, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toPersianDigits } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Home, Shield, Wrench, Briefcase, Building2 } from "lucide-react";
+
+type MapItem = (Villa & { itemType: 'villa' }) | (Building & { itemType: 'building' });
 
 interface SchematicMapProps {
-  villas: Villa[];
+  items: MapItem[];
   mapImageUrl: string;
   isEditMode: boolean;
-  onVillaMove: (villaId: string, position: { top: string; left: string }) => void;
+  onItemMove: (itemId: string, position: { top: string; left: string }) => void;
   onEditVilla: (villa: Villa) => void;
+  onEditBuilding: (building: Building) => void;
 }
 
-const VillaIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M12 2L2 9.5V22h20V9.5L12 2z" />
-  </svg>
-);
+const itemIcons = {
+    villa: Home,
+    security: Shield,
+    facility: Wrench,
+    office: Briefcase,
+    other: Building2
+};
 
-export default function SchematicMap({ villas, mapImageUrl, isEditMode, onVillaMove, onEditVilla }: SchematicMapProps) {
+const ItemIcon = ({ item, ...props }: {item: MapItem} & React.SVGProps<SVGSVGElement>) => {
+    const Icon = item.itemType === 'villa' ? itemIcons.villa : itemIcons[item.type];
+    return <Icon {...props} />;
+};
+
+
+export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMove, onEditVilla, onEditBuilding }: SchematicMapProps) {
   const [selectedVilla, setSelectedVilla] = useState<Villa | null>(null);
-  const [draggingVilla, setDraggingVilla] = useState<string | null>(null);
+  const [draggingItem, setDraggingItem] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
 
-  const handleVillaClick = (villa: Villa) => {
-    if (!isEditMode) {
-      setSelectedVilla(villa);
+  const handleItemClick = (item: MapItem) => {
+    if (isEditMode) {
+        if (item.itemType === 'villa') {
+            onEditVilla(item);
+        } else {
+            onEditBuilding(item);
+        }
+    } else {
+      if (item.itemType === 'villa') {
+          setSelectedVilla(item);
+      }
     }
   };
   
-  const handleMouseDown = (e: MouseEvent<HTMLButtonElement>, villaId: string) => {
+  const handleMouseDown = (e: MouseEvent<HTMLButtonElement>, itemId: string) => {
     if (!isEditMode || !mapRef.current) return;
-    setDraggingVilla(villaId);
+    setDraggingItem(itemId);
     const buttonRect = e.currentTarget.getBoundingClientRect();
-    const mapRect = mapRef.current.getBoundingClientRect();
     
-    // Calculate offset from the top-left of the button itself, not the map
     offsetRef.current = {
       x: e.clientX - buttonRect.left,
       y: e.clientY - buttonRect.top
     };
     
-    // Prevent default to avoid text selection, etc.
     e.preventDefault();
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isEditMode || !draggingVilla || !mapRef.current) return;
+    if (!isEditMode || !draggingItem || !mapRef.current) return;
     
     const mapRect = mapRef.current.getBoundingClientRect();
     let newX = e.clientX - mapRect.left - offsetRef.current.x;
     let newY = e.clientY - mapRect.top - offsetRef.current.y;
     
-    // Convert to percentage and clamp between 0% and 100%
     let topPercent = Math.max(0, Math.min(100, (newY / mapRect.height) * 100));
     let leftPercent = Math.max(0, Math.min(100, (newX / mapRect.width) * 100));
     
-    onVillaMove(draggingVilla, { top: `${topPercent}%`, left: `${leftPercent}%` });
+    onItemMove(draggingItem, { top: `${topPercent}%`, left: `${leftPercent}%` });
   };
   
   const handleMouseUp = () => {
     if (!isEditMode) return;
-    setDraggingVilla(null);
+    setDraggingItem(null);
   };
+  
+  const getItemLabel = (item: MapItem) => {
+    if (item.itemType === 'villa') {
+        return `ویلا ${toPersianDigits(item.villaNumber)}`;
+    }
+    return item.name;
+  };
+
 
   return (
     <div 
@@ -87,21 +111,21 @@ export default function SchematicMap({ villas, mapImageUrl, isEditMode, onVillaM
         />
       )}
       <div className="absolute inset-0">
-        {villas.map((villa) => (
+        {items.map((item) => (
           <button
-            key={villa.id}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 group ${isEditMode ? 'cursor-grab' : 'cursor-pointer'} ${draggingVilla === villa.id ? 'cursor-grabbing z-10' : ''}`}
+            key={item.id}
+            className={`absolute transform -translate-x-1/2 -translate-y-1/2 group ${isEditMode ? 'cursor-grab' : 'cursor-pointer'} ${draggingItem === item.id ? 'cursor-grabbing z-10' : ''}`}
             style={{ 
-              top: villa.mapPosition?.top || '50%', 
-              left: villa.mapPosition?.left || '50%',
+              top: item.mapPosition?.top || '50%', 
+              left: item.mapPosition?.left || '50%',
             }}
-            onClick={() => handleVillaClick(villa)}
-            onMouseDown={(e) => handleMouseDown(e, villa.id)}
-            aria-label={`ویلا شماره ${toPersianDigits(villa.villaNumber)}`}
+            onClick={() => handleItemClick(item)}
+            onMouseDown={(e) => handleMouseDown(e, item.id)}
+            aria-label={getItemLabel(item)}
           >
-            <VillaIcon className={`h-8 w-8 text-primary drop-shadow-md transition-transform ${!isEditMode && 'group-hover:scale-125'}`} />
+            <ItemIcon item={item} className={`h-8 w-8 text-primary drop-shadow-md transition-transform ${!isEditMode && 'group-hover:scale-125'}`} />
              <span className={`absolute -top-6 left-1/2 -translate-x-1/2 bg-card text-card-foreground px-2 py-1 text-xs rounded-md shadow-lg transition-opacity whitespace-nowrap ${isEditMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              ویلا {toPersianDigits(villa.villaNumber)}
+              {getItemLabel(item)}
             </span>
           </button>
         ))}

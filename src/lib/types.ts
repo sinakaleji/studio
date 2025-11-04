@@ -28,6 +28,13 @@ export interface Villa {
   mapPosition: { top: string; left: string };
 }
 
+export interface Building {
+  id: string;
+  name: string;
+  type: 'security' | 'facility' | 'office' | 'other';
+  mapPosition: { top: string; left: string };
+}
+
 export interface BoardMember {
   id: string;
   firstName: string;

@@ -1,5 +1,6 @@
 
-import type { Personnel, Villa, BoardMember } from './types';
+
+import type { Personnel, Villa, BoardMember, Building } from './types';
 
 export const mockPersonnel: Personnel[] = [
   { id: 'p1', firstName: 'اسحاق', lastName: '', role: 'خدمات', contact: '0910-305-3794', documents: [] },
@@ -36,4 +37,9 @@ export const mockBoardMembers: BoardMember[] = [
   { id: 'b1', firstName: 'سینا', lastName: 'کالجی', title: 'رئیس هیئت مدیره', contact: '09112223344' },
   { id: 'b2', firstName: 'آزاده', lastName: 'شریفی', title: 'نایب رئیس', contact: '09128765432' },
   { id: 'b3', firstName: 'منصور', lastName: 'پناهی', title: 'عضو هیئت مدیره', contact: '09134567890' },
+];
+
+export const mockBuildings: Building[] = [
+    { id: 'bldg1', name: 'دفتر مدیریت', type: 'office', mapPosition: { top: '5%', left: '5%' } },
+    { id: 'bldg2', name: 'اتاق نگهبانی', type: 'security', mapPosition: { top: '95%', left: '95%' } },
 ];
