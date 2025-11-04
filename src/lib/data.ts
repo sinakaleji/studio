@@ -37,4 +37,3 @@ export const mockBoardMembers: BoardMember[] = [
   { id: 'b2', firstName: 'آزاده', lastName: 'شریفی', title: 'نایب رئیس', contact: '09128765432' },
   { id: 'b3', firstName: 'منصور', lastName: 'پناهی', title: 'عضو هیئت مدیره', contact: '09134567890' },
 ];
-
