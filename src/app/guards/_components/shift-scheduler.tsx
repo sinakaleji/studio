@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -62,14 +62,14 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   });
 
   function generateSchedule(data: FormValues) {
-    const { startDate, shiftType, guardAvailability } = data;
-    // Set start date to the first day of the selected month
+    const { startDate, shiftType, guardAvailability, constraints } = data;
     const monthStartDate = startOfMonth(startDate);
     const daysInMonth = getDaysInMonth(monthStartDate);
-
     const shiftsPerDay = shiftType === '12-hour' ? 2 : 3;
     const newSchedule: Schedule = {};
     
+    // Simple round-robin assignment for now.
+    // In a future step, this can be enhanced to respect constraints.
     let guardIndex = 0;
 
     for (let i = 0; i < daysInMonth; i++) {
@@ -93,8 +93,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     setIsLoading(true);
     setSchedule(null);
     setCurrentShiftType(data.shiftType);
-    
-    // Simulate generation delay
+
+    // Simulate AI generation or complex logic
     setTimeout(() => {
         try {
             if (data.guardAvailability.length === 0) {
@@ -106,8 +106,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 setIsLoading(false);
                 return;
             }
-            const newSchedule = generateSchedule(data);
-            setSchedule(newSchedule);
+            const generatedSchedule = generateSchedule(data);
+            setSchedule(generatedSchedule);
             toast({
                 title: "موفقیت آمیز",
                 description: "برنامه شیفت با موفقیت ایجاد شد.",
@@ -121,7 +121,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         } finally {
             setIsLoading(false);
         }
-    }, 500);
+    }, 500); // Delay for user to see loading state
   }
 
   return (
@@ -164,6 +164,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                     <div className="mb-4"><FormLabel>نگهبانان در دسترس</FormLabel></div>
                     {guards.map((guard) => {
                       const guardName = `${guard.firstName} ${guard.lastName}`.trim();
+                      if (!guardName) return null;
                       return (
                       <FormField
                         key={guard.id}
@@ -175,9 +176,10 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                               <Checkbox
                                 checked={field.value?.includes(guardName)}
                                 onCheckedChange={(checked) => {
+                                  const currentSelection = field.value || [];
                                   return checked
-                                    ? field.onChange([...(field.value || []), guardName])
-                                    : field.onChange(field.value?.filter((value) => value !== guardName));
+                                    ? field.onChange([...currentSelection, guardName])
+                                    : field.onChange(currentSelection.filter((value) => value !== guardName));
                                 }}
                               />
                             </FormControl>
@@ -207,12 +209,12 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
-                          locale={{ code: 'fa-IR', options: { weekStartsOn: 6 } }}
+                          locale={{ code: 'fa' }}
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          defaultMonth={field.value}
+                          defaultMonth={field.value || new Date()}
                           captionLayout="dropdown-buttons"
                           fromYear={getYear(new Date()) - 5}
                           toYear={getYear(new Date()) + 5}
@@ -230,7 +232,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   <FormItem>
                     <FormLabel>محدودیت‌ها (اختیاری)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="هر نگهبان در چه روزهایی نمی‌تواند شیفت باشد؟" {...field} />
+                      <Textarea placeholder="مثال: فرهنگ در روزهای جمعه نمی‌تواند شیفت باشد." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -284,3 +286,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    
