@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X, Trash2 } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore, isSameMonth, differenceInDays } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -183,13 +183,25 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const { selectedGuards, shiftType, startDate } = data;
     const shifts = data[`${shiftType}-shifts`];
     const newSchedule: Schedule = {};
-    const monthStartDate = startOfMonth(startDate);
-    const daysInMonth = getDaysInMonth(monthStartDate);
+    
+    const today = startOfToday();
+    const monthFirstDay = startOfMonth(startDate);
+
+    // If the selected month is the current month and is not in the past, start from today.
+    // Otherwise, start from the first day of the selected month.
+    let scheduleStartDate = monthFirstDay;
+    if (isSameMonth(startDate, today) && !isBefore(monthFirstDay, today)) {
+        scheduleStartDate = today;
+    }
+
+    const daysInMonth = getDaysInMonth(monthFirstDay);
+    const startDayOffset = differenceInDays(scheduleStartDate, monthFirstDay);
+
     const numShifts = shifts.length;
     let guardIndex = 0;
 
-    for (let i = 0; i < daysInMonth; i++) {
-        const currentDate = addDays(monthStartDate, i);
+    for (let i = startDayOffset; i < daysInMonth; i++) {
+        const currentDate = addDays(monthFirstDay, i);
         const dateKey = format(currentDate, 'yyyy-MM-dd');
         
         const dailyGuards: string[] = [];
