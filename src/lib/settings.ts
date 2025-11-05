@@ -1,9 +1,10 @@
 
 import type { AppSettings } from './types';
-import { exportSelectedData as exportData, importAllData as importData } from './data-manager';
+import { exportSelectedData as exportData, importAllData as importData, ALL_DATA_KEYS } from './data-manager';
 
 
 const SETTINGS_KEY = 'appSettings';
+const AUTO_BACKUP_KEY = 'autoBackup';
 
 const defaultSettings: AppSettings = {
     communityName: "نیلارز",
@@ -55,4 +56,48 @@ export function exportSelectedData(keys: string[]) {
 
 export function importAllData(data: { [key: string]: any }) {
     importData(data);
+}
+
+// --- Auto Backup ---
+
+export function setupAutoBackup() {
+    if (typeof window === 'undefined') {
+        return () => {}; // Return a no-op function for SSR
+    }
+
+    const backupInterval = setInterval(() => {
+        try {
+            const allData = exportData(ALL_DATA_KEYS);
+            localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(allData));
+        } catch (error) {
+            console.error("Auto-backup failed:", error);
+        }
+    }, 5000); // Backup every 5 seconds
+
+    return () => clearInterval(backupInterval); // Return a function to clean up the interval
+}
+
+export function getAutoBackup(): { [key: string]: any } | null {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+    const backupData = localStorage.getItem(AUTO_BACKUP_KEY);
+    if (backupData) {
+        try {
+            return JSON.parse(backupData);
+        } catch (error) {
+            console.error("Failed to parse auto-backup data:", error);
+            return null;
+        }
+    }
+    return null;
+}
+
+export function restoreFromAutoBackup() {
+    const backupData = getAutoBackup();
+    if (backupData) {
+        importAllData(backupData);
+        return true;
+    }
+    return false;
 }

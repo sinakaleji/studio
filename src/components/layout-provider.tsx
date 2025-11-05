@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Button } from './ui/button';
 import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import type { AppSettings } from '@/lib/types';
-import { getSettings, saveSettings } from '@/lib/settings';
+import { getSettings, setupAutoBackup } from '@/lib/settings';
 
 export default function LayoutProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,6 +17,12 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     setSettings(getSettings());
+    
+    // Setup auto-backup
+    const cleanupAutoBackup = setupAutoBackup();
+    return () => {
+      cleanupAutoBackup(); // Cleanup interval on component unmount
+    };
   }, []);
 
 

@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { AppSettings } from "@/lib/types";
-import { getSettings, saveSettings, exportSelectedData, importAllData } from "@/lib/settings";
-import { Trash2, Upload, Download } from "lucide-react";
+import { getSettings, saveSettings, exportSelectedData, importAllData, restoreFromAutoBackup } from "@/lib/settings";
+import { Trash2, Upload, Download, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VILLAS_KEY, PERSONNEL_KEY, BOARD_MEMBERS_KEY, BUILDINGS_KEY } from "@/lib/data-manager";
 
@@ -153,6 +153,22 @@ export default function SettingsPage() {
     });
     setExportSelection(newSelection);
   };
+
+  const handleAutoRestore = () => {
+    if (restoreFromAutoBackup()) {
+      toast({
+        title: "موفقیت",
+        description: "اطلاعات از آخرین نسخه پشتیبان خودکار بازیابی شد. صفحه مجددا بارگذاری می‌شود.",
+      });
+      setTimeout(() => window.location.reload(), 1500);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "هیچ پشتیبان خودکاری یافت نشد.",
+      });
+    }
+  };
   
   const areAllSelected = Object.values(exportSelection).every(Boolean);
 
@@ -278,7 +294,7 @@ export default function SettingsPage() {
                       ))}
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
                     <input
                         type="file"
                         ref={importFileRef}
@@ -286,6 +302,10 @@ export default function SettingsPage() {
                         accept=".json"
                         onChange={handleImport}
                     />
+                     <Button variant="secondary" onClick={handleAutoRestore}>
+                        <RotateCcw className="ml-2 h-4 w-4" />
+                        بازیابی آخرین پشتیبان خودکار
+                    </Button>
                     <Button variant="outline" onClick={handleImportClick}>
                         <Upload className="ml-2 h-4 w-4" />
                         بازیابی از فایل (Import)
