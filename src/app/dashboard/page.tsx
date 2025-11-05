@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Building, User, UserX, Home, Tag } from "lucide-react";
+import { Users, Building, User, UserX, Home, Tag, Phone } from "lucide-react";
 import Clock from "./_components/clock";
 import PersianCalendar from "./_components/persian-calendar";
 import { getVillas, getPersonnel } from "@/lib/data-manager";
@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 
 interface VillaStats {
@@ -100,6 +101,7 @@ export default function DashboardPage() {
                   <TableHead className="text-center">شماره پرسنلی</TableHead>
                   <TableHead className="text-center">نام و نام خانوادگی</TableHead>
                   <TableHead className="text-center">نقش</TableHead>
+                  <TableHead className="text-center">شماره تماس</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -109,6 +111,16 @@ export default function DashboardPage() {
                     <TableCell className="font-medium text-center">{`${person.firstName} ${person.lastName}`}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary">{person.role}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {person.contact && (
+                        <a href={`tel:${person.contact.replace(/-/g, '')}`} className="flex items-center justify-center gap-2 hover:underline">
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <span>{toPersianDigits(person.contact)}</span>
+                        </a>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -161,5 +173,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
