@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import type { Villa } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddVillaProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
   const [tenantFirstName, setTenantFirstName] = useState("");
   const [tenantLastName, setTenantLastName] = useState("");
   const [tenantContact, setTenantContact] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     if (villa) {
@@ -59,8 +61,11 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
   const handleSubmit = () => {
     // Basic validation
     if (!villaNumber || !ownerFirstName || !ownerLastName) {
-      // In a real app, show a toast or error message
-      console.error("Villa number and owner name are required.");
+      toast({
+        variant: "destructive",
+        title: "خطا در اعتبار سنجی",
+        description: "شماره ویلا و نام و نام خانوادگی مالک الزامی است.",
+      });
       return;
     }
     onSave({
