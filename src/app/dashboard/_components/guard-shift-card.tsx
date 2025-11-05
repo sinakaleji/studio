@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shield, ArrowLeft } from "lucide-react";
 import { toPersianDigits } from "@/lib/utils";
-import { format, addDays, parse } from "date-fns-jalali";
+import { format, parse, startOfToday } from "date-fns-jalali";
 import { faIR } from "date-fns-jalali/locale";
 import { Button } from "@/components/ui/button";
 
@@ -41,7 +41,7 @@ export default function GuardShiftCard() {
       if (savedSchedule && savedShiftNames) {
         const schedule: Schedule = JSON.parse(savedSchedule);
         const shiftNames: string[] = JSON.parse(savedShiftNames);
-        const today = new Date();
+        const today = startOfToday();
         const foundShifts: { date: Date, dateKey: string, guards: string[] }[] = [];
 
         // Sort schedule keys to ensure chronological order
@@ -51,7 +51,7 @@ export default function GuardShiftCard() {
         for (const dateKey of sortedDateKeys) {
           try {
             const shiftDate = parse(dateKey, 'yyyy-MM-dd', new Date());
-            if (shiftDate >= today || format(shiftDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+            if (!isNaN(shiftDate.getTime()) && shiftDate >= today) {
               foundShifts.push({ date: shiftDate, dateKey, guards: schedule[dateKey] });
             }
           } catch(e) {
