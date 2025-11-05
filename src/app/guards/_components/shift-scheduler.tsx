@@ -296,7 +296,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <div className="p-2 border rounded-md min-h-[5rem]">
                   {isClient && (
                     <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="selectedGuards" isDropDisabled={false}>
+                      <Droppable droppableId="selectedGuards">
                         {(provided) => (
                           <div {...provided.droppableProps} ref={provided.innerRef}>
                             {fields.map((guard, index) => (
@@ -448,4 +448,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
+    
+
     
