@@ -69,20 +69,16 @@ const SHIFT_NAMES_STORAGE_KEY = 'guardShiftNames';
 const FORM_VALUES_STORAGE_KEY = 'guardShiftFormValues';
 
 
-const useClientOnly = () => {
-    const [isClient, setIsClient] = useState(false);
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-    return isClient;
-}
-
-
 export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentShiftNames, setCurrentShiftNames] = useState<string[]>([]);
-  const isClient = useClientOnly();
+  const [isClient, setIsClient] = useState(false);
+
+   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
