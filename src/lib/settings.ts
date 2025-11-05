@@ -1,4 +1,7 @@
+
 import type { AppSettings } from './types';
+import { exportAllData as exportData, importAllData as importData } from './data-manager';
+
 
 const SETTINGS_KEY = 'appSettings';
 
@@ -43,4 +46,13 @@ export function saveSettings(settings: AppSettings) {
     } catch (error) {
         console.error("Failed to save settings to localStorage", error);
     }
+}
+
+
+export function exportAllData() {
+    return exportData();
+}
+
+export function importAllData(data: { [key: string]: any }) {
+    importData(data);
 }

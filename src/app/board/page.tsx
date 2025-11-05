@@ -44,7 +44,7 @@ export default function BoardPage() {
     let updatedMembers;
     if (memberData.id) {
       updatedMembers = boardMembers.map((m) =>
-        m.id === memberData.id ? { ...m, ...memberData } : m
+        m.id === memberData.id ? { ...m, ...memberData, id: m.id } : m
       );
     } else {
       const newMember: BoardMember = {
