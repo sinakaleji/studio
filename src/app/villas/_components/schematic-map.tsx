@@ -107,7 +107,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
           src={mapImageUrl}
           alt="نقشه شماتیک شهرک"
           fill
-          className="object-cover pointer-events-none" // Prevent image from interfering with mouse events
+          className="object-contain pointer-events-none" // Prevent image from interfering with mouse events
         />
       )}
       <div className="absolute inset-0">
