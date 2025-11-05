@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Building, User, UserX, Home, Tag } from "lucide-react";
 import Clock from "./_components/clock";
 import PersianCalendar from "./_components/persian-calendar";
 import { getVillas, getPersonnel } from "@/lib/data-manager";
-import type { Villa } from "@/lib/types";
+import type { Villa, Personnel } from "@/lib/types";
 import { toPersianDigits } from "@/lib/utils";
 import {
   Tooltip,
@@ -16,6 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 
 interface VillaStats {
@@ -28,7 +37,7 @@ interface VillaStats {
 
 export default function DashboardPage() {
   const [villasCount, setVillasCount] = useState(0);
-  const [personnelCount, setPersonnelCount] = useState(0);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [villaStats, setVillaStats] = useState<VillaStats>({
       ownerOccupied: [],
       rented: [],
@@ -41,19 +50,19 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsClient(true);
     const allVillas = getVillas();
+    const allPersonnel = getPersonnel();
     const ownerOccupied = allVillas.filter(v => v.occupancyStatus === 'owner-occupied');
     const rented = allVillas.filter(v => v.occupancyStatus === 'rented');
     const vacant = allVillas.filter(v => v.occupancyStatus === 'vacant');
     const forSale = allVillas.filter(v => v.isForSale);
 
     setVillasCount(allVillas.length);
-    setPersonnelCount(getPersonnel().length);
+    setPersonnel(allPersonnel);
     setVillaStats({ ownerOccupied, rented, vacant, forSale, total: allVillas.length });
   }, []);
 
   const statsCards = [
     { title: "تعداد کل ویلاها", value: toPersianDigits(villasCount), icon: Building, data: [], tooltip: "تعداد کل ویلاهای ثبت شده" },
-    { title: "تعداد پرسنل", value: toPersianDigits(personnelCount), icon: Users, data: [], tooltip: "تعداد کل پرسنل" },
     { title: "مالک ساکن", value: toPersianDigits(villaStats.ownerOccupied.length), icon: User, data: villaStats.ownerOccupied, tooltip: "ویلاهای با مالک ساکن" },
     { title: "مستأجر", value: toPersianDigits(villaStats.rented.length), icon: Home, data: villaStats.rented, tooltip: "ویلاهای اجاره داده شده" },
     { title: "خالی", value: toPersianDigits(villaStats.vacant.length), icon: UserX, data: villaStats.vacant, tooltip: "ویلاهای خالی" },
@@ -74,6 +83,41 @@ export default function DashboardPage() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <PageHeader title="داشبورد" />
+
+       <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>پرسنل</CardTitle>
+          </div>
+          <CardDescription>لیست پرسنل فعال در مجموعه</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="border rounded-lg overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-center">شماره پرسنلی</TableHead>
+                  <TableHead className="text-center">نام و نام خانوادگی</TableHead>
+                  <TableHead className="text-center">نقش</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {personnel.map((person) => (
+                  <TableRow key={person.id}>
+                    <TableCell className="font-medium text-center">{toPersianDigits(person.personnelNumber)}</TableCell>
+                    <TableCell className="font-medium text-center">{`${person.firstName} ${person.lastName}`}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary">{person.role}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
        <TooltipProvider>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {statsCards.map((stat) => (
@@ -118,3 +162,4 @@ export default function DashboardPage() {
   );
 }
 
+    
