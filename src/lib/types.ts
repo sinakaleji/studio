@@ -1,5 +1,4 @@
 
-
 export interface Document {
   name: string;
   url: string;
@@ -15,14 +14,15 @@ export interface Personnel {
   documents?: Document[];
 }
 
-export type VillaStatus = 'owner-occupied' | 'rented' | 'vacant' | 'for-sale';
+export type VillaOccupancyStatus = 'owner-occupied' | 'rented' | 'vacant';
 
 export interface Villa {
   id: string;
   villaNumber: number;
   ownerFirstName: string;
   ownerLastName: string;
-  status: VillaStatus;
+  occupancyStatus: VillaOccupancyStatus;
+  isForSale: boolean;
   tenantFirstName?: string;
   tenantLastName?: string;
   tenantContact?: string;

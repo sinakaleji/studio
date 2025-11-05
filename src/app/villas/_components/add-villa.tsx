@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import type { Villa, VillaStatus } from "@/lib/types";
+import type { Villa, VillaOccupancyStatus } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddVillaProps {
   isOpen: boolean;
@@ -24,11 +25,10 @@ interface AddVillaProps {
   villa: Villa | null;
 }
 
-const statusOptions: { value: VillaStatus, label: string }[] = [
+const statusOptions: { value: VillaOccupancyStatus, label: string }[] = [
     { value: 'owner-occupied', label: 'مالک ساکن' },
     { value: 'rented', label: 'اجاره' },
     { value: 'vacant', label: 'خالی' },
-    { value: 'for-sale', label: 'برای فروش' },
 ];
 
 export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVillaProps) {
@@ -36,7 +36,8 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
   const [ownerFirstName, setOwnerFirstName] = useState("");
   const [ownerLastName, setOwnerLastName] = useState("");
   const [contact, setContact] = useState("");
-  const [status, setStatus] = useState<VillaStatus>('vacant');
+  const [occupancyStatus, setOccupancyStatus] = useState<VillaOccupancyStatus>('vacant');
+  const [isForSale, setIsForSale] = useState(false);
   const [tenantFirstName, setTenantFirstName] = useState("");
   const [tenantLastName, setTenantLastName] = useState("");
   const [tenantContact, setTenantContact] = useState("");
@@ -48,7 +49,8 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       setOwnerFirstName(villa.ownerFirstName || "");
       setOwnerLastName(villa.ownerLastName || "");
       setContact(villa.contact || "");
-      setStatus(villa.status || 'vacant');
+      setOccupancyStatus(villa.occupancyStatus || 'vacant');
+      setIsForSale(villa.isForSale || false);
       setTenantFirstName(villa.tenantFirstName || "");
       setTenantLastName(villa.tenantLastName || "");
       setTenantContact(villa.tenantContact || "");
@@ -58,7 +60,8 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       setOwnerFirstName("");
       setOwnerLastName("");
       setContact("");
-      setStatus('vacant');
+      setOccupancyStatus('vacant');
+      setIsForSale(false);
       setTenantFirstName("");
       setTenantLastName("");
       setTenantContact("");
@@ -84,7 +87,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       toast({ variant: "destructive", title: "خطا", description: "شماره تماس مالک معتبر نیست. (مثال: 09123456789)" });
       return;
     }
-    if (status === 'rented') {
+    if (occupancyStatus === 'rented') {
       if (!tenantFirstName || !tenantLastName) {
         toast({ variant: "destructive", title: "خطا", description: "لطفا نام و نام خانوادگی مستاجر را وارد کنید." });
         return;
@@ -101,10 +104,11 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       ownerFirstName,
       ownerLastName,
       contact,
-      status,
-      tenantFirstName: status === 'rented' ? tenantFirstName : "",
-      tenantLastName: status === 'rented' ? tenantLastName : "",
-      tenantContact: status === 'rented' ? tenantContact : "",
+      occupancyStatus,
+      isForSale,
+      tenantFirstName: occupancyStatus === 'rented' ? tenantFirstName : "",
+      tenantLastName: occupancyStatus === 'rented' ? tenantLastName : "",
+      tenantContact: occupancyStatus === 'rented' ? tenantContact : "",
     });
     onOpenChange(false); // Close dialog on save
   };
@@ -144,10 +148,10 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
             <Input id="contact" value={contact} onChange={e => setContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              وضعیت ویلا
+            <Label htmlFor="occupancyStatus" className="text-right">
+              وضعیت سکونت
             </Label>
-            <Select value={status} onValueChange={(value: VillaStatus) => setStatus(value)}>
+            <Select value={occupancyStatus} onValueChange={(value: VillaOccupancyStatus) => setOccupancyStatus(value)}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="وضعیت را انتخاب کنید" />
                 </SelectTrigger>
@@ -158,7 +162,16 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
                 </SelectContent>
             </Select>
           </div>
-          {status === 'rented' && (
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="isForSale" className="text-right">
+                وضعیت فروش
+            </Label>
+            <div className="col-span-3 flex items-center gap-2">
+                <Checkbox id="isForSale" checked={isForSale} onCheckedChange={(checked) => setIsForSale(Boolean(checked))} />
+                <label htmlFor="isForSale" className="text-sm cursor-pointer">برای فروش</label>
+            </div>
+          </div>
+          {occupancyStatus === 'rented' && (
             <>
               <div className="grid grid-cols-4 items-center gap-4 pt-4 border-t">
                 <Label htmlFor="tenantFirstName" className="text-right">

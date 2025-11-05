@@ -2,13 +2,13 @@
 "use client";
 
 import Image from "next/image";
-import type { Villa, Building, VillaStatus } from "@/lib/types";
+import type { Villa, Building, VillaOccupancyStatus } from "@/lib/types";
 import { useState, useRef, type MouseEvent, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toPersianDigits } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Home, Shield, Wrench, Briefcase, Building2 } from "lucide-react";
+import { Home, Shield, Wrench, Briefcase, Building2, Tag } from "lucide-react";
 
 type MapItem = (Villa & { itemType: 'villa' }) | (Building & { itemType: 'building' });
 
@@ -34,11 +34,10 @@ const ItemIcon = ({ item, ...props }: {item: MapItem} & React.SVGProps<SVGSVGEle
     return <Icon {...props} />;
 };
 
-const statusMap: { [key in VillaStatus]: { text: string; variant: "default" | "secondary" | "destructive" | "outline" } } = {
+const occupancyStatusMap: { [key in VillaOccupancyStatus]: { text: string; variant: "default" | "secondary" | "destructive" | "outline" } } = {
   'owner-occupied': { text: 'مالک ساکن', variant: 'secondary' },
   'rented': { text: 'اجاره', variant: 'destructive' },
   'vacant': { text: 'خالی', variant: 'outline' },
-  'for-sale': { text: 'برای فروش', variant: 'default' },
 };
 
 
@@ -178,14 +177,23 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                     <span className="font-semibold">{toPersianDigits(selectedVilla.contact || '-')}</span>
                 </div>
                  <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">وضعیت:</span>
-                    <Badge variant={statusMap[selectedVilla.status]?.variant || 'outline'}>
-                        {statusMap[selectedVilla.status]?.text || selectedVilla.status}
+                  <span className="text-muted-foreground">وضعیت سکونت:</span>
+                    <Badge variant={occupancyStatusMap[selectedVilla.occupancyStatus]?.variant || 'outline'}>
+                        {occupancyStatusMap[selectedVilla.occupancyStatus]?.text || selectedVilla.occupancyStatus}
                     </Badge>
                 </div>
-                {selectedVilla.status === 'rented' && (
+                {selectedVilla.isForSale && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">وضعیت فروش:</span>
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                        <Tag className="ml-1 h-3 w-3" />
+                        برای فروش
+                    </Badge>
+                  </div>
+                )}
+                {selectedVilla.occupancyStatus === 'rented' && (
                   <>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-4 border-t mt-2">
                       <span className="text-muted-foreground">مستاجر:</span>
                       <span className="font-semibold">{`${selectedVilla.tenantFirstName} ${selectedVilla.tenantLastName}`}</span>
                     </div>

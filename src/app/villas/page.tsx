@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import PageHeader from "@/components/page-header";
 import { getVillas, saveVillas, getBuildings, saveBuildings, getMapImageUrl, saveMapImageUrl } from "@/lib/data-manager";
-import type { Villa, Building, VillaStatus } from "@/lib/types";
+import type { Villa, Building, VillaOccupancyStatus } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import AddVilla from "./_components/add-villa";
 import AddBuilding from "./_components/add-building";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon } from "lucide-react";
+import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon, Tag } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,11 +36,10 @@ import { useToast } from "@/hooks/use-toast";
 
 type MapItem = (Villa & { itemType: 'villa' }) | (Building & { itemType: 'building' });
 
-const statusMap: { [key in VillaStatus]: { text: string; className: string } } = {
+const occupancyStatusMap: { [key in VillaOccupancyStatus]: { text: string; className: string } } = {
   'owner-occupied': { text: 'مالک ساکن', className: 'bg-blue-100 text-blue-800' },
   'rented': { text: 'اجاره', className: 'bg-yellow-100 text-yellow-800' },
   'vacant': { text: 'خالی', className: 'bg-gray-100 text-gray-800' },
-  'for-sale': { text: 'برای فروش', className: 'bg-green-100 text-green-800' },
 };
 
 
@@ -306,9 +305,17 @@ export default function VillasPage() {
                 <TableCell>{`${villa.ownerFirstName} ${villa.ownerLastName}`}</TableCell>
                 <TableCell>{villa.contact || "-"}</TableCell>
                 <TableCell>
-                    <Badge variant="outline" className={statusMap[villa.status]?.className}>
-                        {statusMap[villa.status]?.text || villa.status}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className={occupancyStatusMap[villa.occupancyStatus]?.className}>
+                            {occupancyStatusMap[villa.occupancyStatus]?.text || villa.occupancyStatus}
+                        </Badge>
+                        {villa.isForSale && (
+                             <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                <Tag className="ml-1 h-3 w-3" />
+                                برای فروش
+                            </Badge>
+                        )}
+                    </div>
                 </TableCell>
                 <TableCell>{villa.tenantFirstName ? `${villa.tenantFirstName} ${villa.tenantLastName}` : "-"}</TableCell>
                 <TableCell>{villa.tenantContact || "-"}</TableCell>
