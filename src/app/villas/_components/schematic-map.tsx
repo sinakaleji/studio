@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toPersianDigits } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Home, Shield, Wrench, Briefcase, Building2, Tag } from "lucide-react";
+import { Home, Shield, Wrench, Briefcase, Building2, Tag, BedDouble, Ruler, ParkingCircle } from "lucide-react";
 
 type MapItem = (Villa & { itemType: 'villa' }) | (Building & { itemType: 'building' });
 
@@ -40,9 +40,16 @@ const occupancyStatusMap: { [key in VillaOccupancyStatus]: { text: string; varia
   'vacant': { text: 'خالی', variant: 'outline' },
 };
 
+const BuildingTypeMap: { [key in Building['type']]: string } = {
+  'security': 'نگهبانی',
+  'facility': 'تاسیسات',
+  'office': 'اداری',
+  'other': 'سایر'
+};
+
 
 export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMove, onEditVilla, onEditBuilding }: SchematicMapProps) {
-  const [selectedVilla, setSelectedVilla] = useState<Villa | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MapItem | null>(null);
   const [draggingItem, setDraggingItem] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -55,9 +62,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
             onEditBuilding(item);
         }
     } else {
-      if (item.itemType === 'villa') {
-          setSelectedVilla(item);
-      }
+      setSelectedItem(item);
     }
   };
   
@@ -157,12 +162,12 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
         ))}
       </div>
 
-      <Sheet open={!!selectedVilla} onOpenChange={(open) => !open && setSelectedVilla(null)}>
+      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <SheetContent>
-          {selectedVilla && (
+          {selectedItem?.itemType === 'villa' && (
             <>
               <SheetHeader>
-                <SheetTitle className="font-headline">اطلاعات ویلا شماره {toPersianDigits(selectedVilla.villaNumber)}</SheetTitle>
+                <SheetTitle className="font-headline">اطلاعات ویلا شماره {toPersianDigits(selectedItem.villaNumber)}</SheetTitle>
                 <SheetDescription>
                   جزئیات مربوط به ویلا و ساکنین آن.
                 </SheetDescription>
@@ -170,19 +175,20 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
               <div className="grid gap-4 py-4">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">مالک:</span>
-                  <span className="font-semibold">{`${selectedVilla.ownerFirstName} ${selectedVilla.ownerLastName}`}</span>
+                  <span className="font-semibold">{`${selectedItem.ownerFirstName} ${selectedItem.ownerLastName}`}</span>
                 </div>
                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">شماره تماس:</span>
-                    <span className="font-semibold">{toPersianDigits(selectedVilla.contact || '-')}</span>
+                    <span className="text-muted-foreground">شماره تماس مالک:</span>
+                    <span className="font-semibold">{toPersianDigits(selectedItem.contact || '-')}</span>
                 </div>
+                <hr/>
                  <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">وضعیت سکونت:</span>
-                    <Badge variant={occupancyStatusMap[selectedVilla.occupancyStatus]?.variant || 'outline'}>
-                        {occupancyStatusMap[selectedVilla.occupancyStatus]?.text || selectedVilla.occupancyStatus}
+                    <Badge variant={occupancyStatusMap[selectedItem.occupancyStatus]?.variant || 'outline'}>
+                        {occupancyStatusMap[selectedItem.occupancyStatus]?.text || selectedItem.occupancyStatus}
                     </Badge>
                 </div>
-                {selectedVilla.isForSale && (
+                {selectedItem.isForSale && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">وضعیت فروش:</span>
                     <Badge variant="default" className="bg-green-600 hover:bg-green-700">
@@ -191,24 +197,76 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                     </Badge>
                   </div>
                 )}
-                {selectedVilla.occupancyStatus === 'rented' && selectedVilla.tenant && (
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2"><BedDouble className="h-4 w-4"/>تعداد خواب:</span>
+                    <span className="font-semibold">{selectedItem.bedrooms ? toPersianDigits(selectedItem.bedrooms) : '-'}</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2"><Ruler className="h-4 w-4"/>متراژ:</span>
+                    <span className="font-semibold">{selectedItem.area ? `${toPersianDigits(selectedItem.area)} متر مربع` : '-'}</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2"><ParkingCircle className="h-4 w-4"/>پارکینگ:</span>
+                    <span className="font-semibold">{selectedItem.hasParking ? "دارد" : "ندارد"}</span>
+                </div>
+
+                {selectedItem.description && (
+                   <div className="flex flex-col gap-2 pt-4 border-t mt-2">
+                       <span className="text-muted-foreground">توضیحات:</span>
+                       <p className="text-sm font-semibold whitespace-pre-wrap">{selectedItem.description}</p>
+                   </div>
+                )}
+               
+                {selectedItem.occupancyStatus === 'rented' && selectedItem.tenant && (
                   <div className="flex flex-col gap-2 pt-4 border-t mt-2">
+                      <span className="text-muted-foreground">اطلاعات مستاجر:</span>
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">اطلاعات مستاجر:</span>
+                         <span>نام:</span>
+                         <span className="font-semibold">{`${selectedItem.tenant.firstName} ${selectedItem.tenant.lastName}`}</span>
                       </div>
-                      <p className="text-sm font-semibold whitespace-pre-wrap">{`${selectedVilla.tenant.firstName} ${selectedVilla.tenant.lastName}`}</p>
-                      <p className="text-sm font-semibold whitespace-pre-wrap">{toPersianDigits(selectedVilla.tenant.contact)}</p>
+                       <div className="flex justify-between items-center">
+                         <span>تماس:</span>
+                         <span className="font-semibold">{toPersianDigits(selectedItem.tenant.contact)}</span>
+                      </div>
                   </div>
                 )}
               </div>
               <Button onClick={() => {
-                onEditVilla(selectedVilla);
-                setSelectedVilla(null);
+                if(selectedItem.itemType === 'villa') onEditVilla(selectedItem);
+                setSelectedItem(null);
               }}>
                 ویرایش اطلاعات
               </Button>
             </>
           )}
+           {selectedItem?.itemType === 'building' && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="font-headline">اطلاعات ساختمان: {selectedItem.name}</SheetTitle>
+                <SheetDescription>
+                  جزئیات مربوط به این ساختمان.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="grid gap-4 py-4">
+                 <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">نوع ساختمان:</span>
+                  <Badge variant="outline">{BuildingTypeMap[selectedItem.type]}</Badge>
+                </div>
+                 {selectedItem.description && (
+                   <div className="flex flex-col gap-2 pt-4 border-t mt-2">
+                       <span className="text-muted-foreground">توضیحات:</span>
+                       <p className="text-sm font-semibold whitespace-pre-wrap">{selectedItem.description}</p>
+                   </div>
+                )}
+              </div>
+               <Button onClick={() => {
+                if(selectedItem.itemType === 'building') onEditBuilding(selectedItem);
+                setSelectedItem(null);
+              }}>
+                ویرایش اطلاعات
+              </Button>
+            </>
+           )}
         </SheetContent>
       </Sheet>
     </div>

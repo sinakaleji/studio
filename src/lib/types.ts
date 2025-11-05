@@ -30,6 +30,10 @@ export interface Villa {
   };
   contact?: string;
   mapPosition: { top: string; left: string };
+  bedrooms?: number;
+  area?: number;
+  hasParking?: boolean;
+  description?: string;
 }
 
 export interface Building {
@@ -37,6 +41,7 @@ export interface Building {
   name: string;
   type: 'security' | 'facility' | 'office' | 'other';
   mapPosition: { top: string; left: string };
+  description?: string;
 }
 
 export interface BoardMember {

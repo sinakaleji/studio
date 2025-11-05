@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import type { Building } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -27,15 +28,18 @@ interface AddBuildingProps {
 export default function AddBuilding({ isOpen, onOpenChange, onSave, building }: AddBuildingProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<Building['type'] | ''>('');
+  const [description, setDescription] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
     if (building) {
       setName(building.name || "");
       setType(building.type || "");
+      setDescription(building.description || "");
     } else {
       setName("");
       setType("");
+      setDescription("");
     }
   }, [building, isOpen]);
 
@@ -52,6 +56,7 @@ export default function AddBuilding({ isOpen, onOpenChange, onSave, building }: 
       id: building?.id,
       name,
       type: type as Building['type'],
+      description,
     });
     onOpenChange(false);
   };
@@ -87,6 +92,12 @@ export default function AddBuilding({ isOpen, onOpenChange, onSave, building }: 
                 <SelectItem value="other">سایر</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+             <Label htmlFor="description" className="text-right">
+                توضیحات
+            </Label>
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="توضیحات اضافی درباره ساختمان..."/>
           </div>
         </div>
         <DialogFooter>
