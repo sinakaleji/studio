@@ -6,13 +6,14 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shield, ArrowLeft } from "lucide-react";
-import { toPersianDigits } from "@/lib/utils";
-import { format, parse, startOfToday } from "date-fns-jalali";
+import { toPersianDigits, cn } from "@/lib/utils";
+import { format, parse, startOfToday, setHours, setMinutes, isPast, addDays, isBefore } from "date-fns-jalali";
 import { faIR } from "date-fns-jalali/locale";
 import { Button } from "@/components/ui/button";
 
 const SCHEDULE_STORAGE_KEY = 'guardShiftSchedule';
 const SHIFT_NAMES_STORAGE_KEY = 'guardShiftNames';
+const FORM_VALUES_STORAGE_KEY = 'guardShiftFormValues';
 const MAX_SHIFTS_TO_DISPLAY = 6;
 
 interface Schedule {
@@ -25,7 +26,14 @@ interface ShiftInfo {
   assignments: {
     shiftName: string;
     guardName: string;
+    isFinished: boolean;
   }[];
+}
+
+interface FormValues {
+    '12-hour-shifts': { name: string, start: string, end: string }[];
+    '8-hour-shifts': { name: string, start: string, end: string }[];
+    shiftType: '12-hour' | '8-hour';
 }
 
 export default function GuardShiftCard() {
@@ -37,24 +45,24 @@ export default function GuardShiftCard() {
     if (typeof window !== 'undefined') {
       const savedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
       const savedShiftNames = localStorage.getItem(SHIFT_NAMES_STORAGE_KEY);
+      const savedFormValues = localStorage.getItem(FORM_VALUES_STORAGE_KEY);
 
-      if (savedSchedule && savedShiftNames) {
+      if (savedSchedule && savedShiftNames && savedFormValues) {
         const schedule: Schedule = JSON.parse(savedSchedule);
         const shiftNames: string[] = JSON.parse(savedShiftNames);
+        const formValues: FormValues = JSON.parse(savedFormValues);
         const today = startOfToday();
-        const foundShifts: { date: Date, dateKey: string, guards: string[] }[] = [];
+        const foundShifts: { date: Date; dateKey: string; guards: string[] }[] = [];
 
-        // Sort schedule keys to ensure chronological order
         const sortedDateKeys = Object.keys(schedule).sort();
 
-        // Find today's and future shifts
         for (const dateKey of sortedDateKeys) {
           try {
             const shiftDate = parse(dateKey, 'yyyy-MM-dd', new Date());
-            if (!isNaN(shiftDate.getTime()) && shiftDate >= today) {
+            if (!isNaN(shiftDate.getTime()) && !isBefore(shiftDate, today)) {
               foundShifts.push({ date: shiftDate, dateKey, guards: schedule[dateKey] });
             }
-          } catch(e) {
+          } catch (e) {
             // ignore invalid dates in schedule
           }
         }
@@ -62,28 +70,60 @@ export default function GuardShiftCard() {
         const shiftsByDay: { [key: string]: ShiftInfo } = {};
         let shiftsCount = 0;
 
-        for (const shift of foundShifts) {
-          if (shiftsCount >= MAX_SHIFTS_TO_DISPLAY) break;
+        const getShiftEndTime = (shiftIndex: number, date: Date): Date => {
+            const shiftTimes = formValues[`${formValues.shiftType}-shifts`];
+            const shiftInfo = shiftTimes[shiftIndex];
+            if (!shiftInfo || !shiftInfo.end) return new Date();
+            
+            const [endHour, endMinute] = shiftInfo.end.split(':').map(Number);
+            const [startHour] = shiftInfo.start.split(':').map(Number);
 
-          const dateKey = format(shift.date, 'yyyy/MM/dd');
-          
-          if (!shiftsByDay[dateKey]) {
-            shiftsByDay[dateKey] = {
-              date: toPersianDigits(dateKey),
-              dayName: format(shift.date, 'eeee', { locale: faIR }),
-              assignments: [],
-            };
-          }
-
-          shift.guards.forEach((guardName, index) => {
-            if (shiftsCount < MAX_SHIFTS_TO_DISPLAY) {
-              shiftsByDay[dateKey].assignments.push({
-                shiftName: shiftNames[index] || `شیفت ${index + 1}`,
-                guardName: guardName,
-              });
-              shiftsCount++;
+            let endDate = setHours(setMinutes(date, endMinute), endHour);
+            if (endHour < startHour) {
+                endDate = addDays(endDate, 1);
             }
-          });
+            return endDate;
+        };
+
+        for (const shift of foundShifts) {
+            if (shiftsCount >= MAX_SHIFTS_TO_DISPLAY) break;
+
+            const dateKey = format(shift.date, 'yyyy/MM/dd');
+            
+            const dayAssignments = shift.guards.map((guardName, index) => {
+                const shiftEndTime = getShiftEndTime(index, shift.date);
+                const isFinished = isPast(shiftEndTime);
+                return {
+                    shiftName: shiftNames[index] || `شیفت ${index + 1}`,
+                    guardName: guardName,
+                    isFinished,
+                };
+            });
+
+            // If all shifts for the day are finished, skip this day
+            if (dayAssignments.every(a => a.isFinished)) {
+                continue;
+            }
+
+            if (!shiftsByDay[dateKey]) {
+                shiftsByDay[dateKey] = {
+                    date: toPersianDigits(dateKey),
+                    dayName: format(shift.date, 'eeee', { locale: faIR }),
+                    assignments: [],
+                };
+            }
+            
+            dayAssignments.forEach(assignment => {
+                if (shiftsCount < MAX_SHIFTS_TO_DISPLAY) {
+                    shiftsByDay[dateKey].assignments.push(assignment);
+                    shiftsCount++;
+                }
+            });
+
+            // If a day has no assignments to show, remove it
+            if(shiftsByDay[dateKey].assignments.length === 0){
+                delete shiftsByDay[dateKey];
+            }
         }
         
         setUpcomingShifts(Object.values(shiftsByDay));
@@ -120,7 +160,7 @@ export default function GuardShiftCard() {
               </Link>
             </Button>
         </div>
-        <CardDescription>نمایش ۶ شیفت آینده</CardDescription>
+        <CardDescription>نمایش شیفت‌های آینده</CardDescription>
       </CardHeader>
       <CardContent>
         {upcomingShifts.length > 0 ? (
@@ -139,8 +179,8 @@ export default function GuardShiftCard() {
                             <TableBody>
                                 {dayShifts.assignments.map((assignment, assignmentIndex) => (
                                     <TableRow key={assignmentIndex}>
-                                        <TableCell className="text-center">{assignment.shiftName}</TableCell>
-                                        <TableCell className="text-center font-medium">{assignment.guardName}</TableCell>
+                                        <TableCell className={cn("text-center", assignment.isFinished && "line-through text-muted-foreground")}>{assignment.shiftName}</TableCell>
+                                        <TableCell className={cn("text-center font-medium", assignment.isFinished && "line-through text-muted-foreground")}>{assignment.guardName}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -163,3 +203,5 @@ export default function GuardShiftCard() {
     </Card>
   );
 }
+
+    

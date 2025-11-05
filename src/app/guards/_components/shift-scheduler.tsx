@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X, Trash2 } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore, isSameMonth, differenceInDays, isAfter } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore, isSameMonth, differenceInDays, isAfter, setHours, setMinutes, isPast } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -190,13 +190,10 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const existingDates = existingSchedule ? Object.keys(existingSchedule).sort() : [];
     let scheduleStartDate = monthFirstDay;
     
-    // If generating for the current month, start from today.
     if (isSameMonth(startDate, today) && isAfter(today, monthFirstDay)) {
         scheduleStartDate = today;
     }
     
-    // If there is an existing schedule for a previous month, try to start from the day after the last scheduled day
-    // But only if the new month is directly after the old one. If they jump a month, restart.
     if (existingDates.length > 0) {
         const lastDateStr = existingDates[existingDates.length - 1];
         try {
@@ -215,7 +212,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const numShifts = shifts.length;
     let guardIndex = 0;
 
-    // Find the starting guard index based on the end of the existing schedule
     if (existingSchedule && existingDates.length > 0) {
         const lastDateStr = existingDates[existingDates.length - 1];
         const lastDayGuards = existingSchedule[lastDateStr];
@@ -233,7 +229,6 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         const currentDate = addDays(monthFirstDay, i);
         const dateKey = format(currentDate, 'yyyy-MM-dd');
         
-        // Skip if date already exists in schedule
         if (newSchedule[dateKey]) continue;
 
         const dailyGuards: string[] = [];
@@ -299,9 +294,55 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     });
   };
 
+  const getShiftEndTime = (shiftIndex: number, date: Date): Date => {
+      const shiftType = form.watch("shiftType");
+      const shiftTimes = form.watch(`${shiftType}-shifts`);
+      const shiftInfo = shiftTimes[shiftIndex];
+      if (!shiftInfo || !shiftInfo.end) return new Date();
+
+      const [endHour, endMinute] = shiftInfo.end.split(':').map(Number);
+      const [startHour] = shiftInfo.start.split(':').map(Number);
+
+      let endDate = setHours(setMinutes(date, endMinute), endHour);
+      
+      // If end time is earlier than start time, it's an overnight shift
+      if (endHour < startHour) {
+          endDate = addDays(endDate, 1);
+      }
+      
+      return endDate;
+  };
+
+  const getVisibleSchedule = () => {
+    if (!schedule) return [];
+
+    const today = new Date();
+    const visibleEntries = Object.entries(schedule)
+      .map(([dateStr, guards]) => {
+        const date = parse(dateStr, 'yyyy-MM-dd', new Date());
+        
+        const allShiftsFinished = guards.every((_, index) => {
+            const shiftEndTime = getShiftEndTime(index, date);
+            return isPast(shiftEndTime);
+        });
+
+        if (allShiftsFinished) {
+            return null;
+        }
+
+        return { date, dateStr, guards };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a!.date.getTime() - b!.date.getTime());
+      
+      return visibleEntries;
+  }
+
   if (!isClient) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+  
+  const visibleSchedule = getVisibleSchedule();
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -504,8 +545,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
         </CardHeader>
         <CardContent>
           {isLoading && <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-          {!isLoading && !schedule && <div className="flex justify-center items-center h-64 text-muted-foreground">برنامه‌ای برای نمایش وجود ندارد.</div>}
-          {schedule && (
+          {!isLoading && (!schedule || visibleSchedule.length === 0) && <div className="flex justify-center items-center h-64 text-muted-foreground">برنامه‌ای برای نمایش وجود ندارد.</div>}
+          {schedule && visibleSchedule.length > 0 && (
             <div className="border rounded-lg max-h-[600px] overflow-auto">
               <Table>
                 <TableHeader>
@@ -517,16 +558,21 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(schedule).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()).map(([date, assignedGuards]) => {
-                     const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
+                  {visibleSchedule.map((entry) => {
+                     if (!entry) return null;
+                     const { date, guards } = entry;
                      return (
-                        <TableRow key={date}>
-                          <TableCell>{toPersianDigits(format(parsedDate, 'yyyy/MM/dd'))} ({format(parsedDate, 'eeee', { locale: faIR })})</TableCell>
-                           {assignedGuards.map((guard, index) => (
-                               <TableCell key={index}>{guard}</TableCell>
-                           ))}
+                        <TableRow key={date.toISOString()}>
+                          <TableCell>{toPersianDigits(format(date, 'yyyy/MM/dd'))} ({format(date, 'eeee', { locale: faIR })})</TableCell>
+                           {guards.map((guard, index) => {
+                                const shiftEndTime = getShiftEndTime(index, date);
+                                const isFinished = isPast(shiftEndTime);
+                               return (
+                                   <TableCell key={index} className={cn(isFinished && "line-through text-muted-foreground")}>{guard}</TableCell>
+                               )
+                           })}
                            {/* Render empty cells if fewer guards than shifts */}
-                           {Array.from({ length: Math.max(0, currentShiftNames.length - assignedGuards.length) }).map((_, i) => (
+                           {Array.from({ length: Math.max(0, currentShiftNames.length - guards.length) }).map((_, i) => (
                               <TableCell key={`empty-${i}`}></TableCell>
                            ))}
                         </TableRow>
@@ -541,3 +587,5 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
+
+    
