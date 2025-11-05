@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -94,20 +94,44 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
 
   useEffect(() => {
     if (isClient) {
-      const savedSchedule = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      let savedScheduleJson = localStorage.getItem(SCHEDULE_STORAGE_KEY);
       const savedShiftNames = localStorage.getItem(SHIFT_NAMES_STORAGE_KEY);
       const savedFormValues = localStorage.getItem(FORM_VALUES_STORAGE_KEY);
 
-      if (savedSchedule) {
-        setSchedule(JSON.parse(savedSchedule));
+      if (savedScheduleJson) {
+        let savedSchedule: Schedule = JSON.parse(savedScheduleJson);
+        const today = startOfToday();
+        const cleanedSchedule: Schedule = {};
+        let scheduleWasCleaned = false;
+
+        Object.keys(savedSchedule).forEach(dateKey => {
+            try {
+                const scheduleDate = parse(dateKey, 'yyyy-MM-dd', new Date());
+                if (!isBefore(scheduleDate, today)) {
+                    cleanedSchedule[dateKey] = savedSchedule[dateKey];
+                } else {
+                    scheduleWasCleaned = true;
+                }
+            } catch (e) {
+                // If date is invalid, just don't include it.
+                scheduleWasCleaned = true;
+            }
+        });
+
+        if (scheduleWasCleaned) {
+          localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(cleanedSchedule));
+        }
+        
+        setSchedule(cleanedSchedule);
       }
+
       if (savedShiftNames) {
         setCurrentShiftNames(JSON.parse(savedShiftNames));
       }
+
       if (savedFormValues) {
         try {
             const parsedData = JSON.parse(savedFormValues);
-            // Date needs to be converted back to a Date object
             if (parsedData.startDate) {
                 parsedData.startDate = new Date(parsedData.startDate);
             }
@@ -268,7 +292,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
               )}
               
                <div className="space-y-2">
-                <FormLabel>نگهبانان (به ترتیب شیفت)</FormLabel>
+                <FormLabel>نگهبانان (به ترتیب شیft)</FormLabel>
                 <div className="p-2 border rounded-md min-h-[5rem]">
                   {isClient && (
                     <DragDropContext onDragEnd={onDragEnd}>

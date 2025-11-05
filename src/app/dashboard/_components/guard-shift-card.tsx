@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Shield, ArrowLeft } from "lucide-react";
 import { toPersianDigits } from "@/lib/utils";
-import { format } from "date-fns-jalali";
+import { format, addDays, parse } from "date-fns-jalali";
 import { Button } from "@/components/ui/button";
 
 const SCHEDULE_STORAGE_KEY = 'guardShiftSchedule';
 const SHIFT_NAMES_STORAGE_KEY = 'guardShiftNames';
+const MAX_SHIFTS_TO_DISPLAY = 6;
 
 interface Schedule {
   [date: string]: string[];
@@ -26,7 +28,7 @@ interface ShiftInfo {
 }
 
 export default function GuardShiftCard() {
-  const [shifts, setShifts] = useState<ShiftInfo[]>([]);
+  const [upcomingShifts, setUpcomingShifts] = useState<ShiftInfo[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -39,37 +41,51 @@ export default function GuardShiftCard() {
         const schedule: Schedule = JSON.parse(savedSchedule);
         const shiftNames: string[] = JSON.parse(savedShiftNames);
         const today = new Date();
-        const tomorrow = new Date();
-        tomorrow.setDate(today.getDate() + 1);
+        const foundShifts: { date: Date, dateKey: string, guards: string[] }[] = [];
 
-        const todayKey = format(today, 'yyyy-MM-dd');
-        const tomorrowKey = format(tomorrow, 'yyyy-MM-dd');
+        // Sort schedule keys to ensure chronological order
+        const sortedDateKeys = Object.keys(schedule).sort();
 
-        const relevantShifts: ShiftInfo[] = [];
+        // Find today's and future shifts
+        for (const dateKey of sortedDateKeys) {
+          try {
+            const shiftDate = parse(dateKey, 'yyyy-MM-dd', new Date());
+            if (shiftDate >= today || format(shiftDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+              foundShifts.push({ date: shiftDate, dateKey, guards: schedule[dateKey] });
+            }
+          } catch(e) {
+            // ignore invalid dates in schedule
+          }
+        }
+        
+        const shiftsByDay: { [key: string]: ShiftInfo } = {};
+        let shiftsCount = 0;
 
-        if (schedule[todayKey]) {
-          relevantShifts.push({
-            date: toPersianDigits(format(today, 'yyyy/MM/dd')),
-            dayName: format(today, 'eeee', { locale: { code: 'fa' } }),
-            assignments: schedule[todayKey].map((guardName, index) => ({
-              shiftName: shiftNames[index] || `شیفت ${index + 1}`,
-              guardName: guardName,
-            })),
+        for (const shift of foundShifts) {
+          if (shiftsCount >= MAX_SHIFTS_TO_DISPLAY) break;
+
+          const dateKey = format(shift.date, 'yyyy/MM/dd');
+          
+          if (!shiftsByDay[dateKey]) {
+            shiftsByDay[dateKey] = {
+              date: toPersianDigits(dateKey),
+              dayName: format(shift.date, 'eeee', { locale: { code: 'fa' } }),
+              assignments: [],
+            };
+          }
+
+          shift.guards.forEach((guardName, index) => {
+            if (shiftsCount < MAX_SHIFTS_TO_DISPLAY) {
+              shiftsByDay[dateKey].assignments.push({
+                shiftName: shiftNames[index] || `شیفت ${index + 1}`,
+                guardName: guardName,
+              });
+              shiftsCount++;
+            }
           });
         }
         
-        if (schedule[tomorrowKey]) {
-           relevantShifts.push({
-            date: toPersianDigits(format(tomorrow, 'yyyy/MM/dd')),
-            dayName: format(tomorrow, 'eeee', { locale: { code: 'fa' } }),
-            assignments: schedule[tomorrowKey].map((guardName, index) => ({
-              shiftName: shiftNames[index] || `شیفت ${index + 1}`,
-              guardName: guardName,
-            })),
-          });
-        }
-        
-        setShifts(relevantShifts);
+        setUpcomingShifts(Object.values(shiftsByDay));
       }
     }
   }, []);
@@ -103,12 +119,12 @@ export default function GuardShiftCard() {
               </Link>
             </Button>
         </div>
-        <CardDescription>نمایش برنامه شیفت امروز و فردا</CardDescription>
+        <CardDescription>نمایش ۶ شیفت آینده</CardDescription>
       </CardHeader>
       <CardContent>
-        {shifts.length > 0 ? (
+        {upcomingShifts.length > 0 ? (
            <div className="space-y-4">
-            {shifts.map((dayShifts, dayIndex) => (
+            {upcomingShifts.map((dayShifts, dayIndex) => (
                 <div key={dayIndex}>
                     <h4 className="font-semibold mb-2">{`${dayShifts.dayName} - ${dayShifts.date}`}</h4>
                     <div className="border rounded-lg overflow-x-auto">
