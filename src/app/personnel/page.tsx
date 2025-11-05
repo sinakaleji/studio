@@ -36,11 +36,15 @@ const generateNextPersonnelNumber = (allPersonnel: Personnel[]): string => {
     if (!allPersonnel.length) {
         return "001";
     }
-    const maxNumber = allPersonnel.reduce((max, p) => {
-        const num = parseInt(p.personnelNumber, 10);
-        return num > max ? num : max;
-    }, 0);
-    return (maxNumber + 1).toString().padStart(3, '0');
+    
+    const existingNumbers = new Set(allPersonnel.map(p => parseInt(p.personnelNumber, 10)));
+
+    let nextNumber = 1;
+    while (existingNumbers.has(nextNumber)) {
+        nextNumber++;
+    }
+
+    return nextNumber.toString().padStart(3, '0');
 };
 
 
@@ -136,7 +140,7 @@ export default function PersonnelPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm">
-                          مشاهده مدارک ({person.documents.length})
+                          مشاهده مدارک ({toPersianDigits(person.documents.length)})
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -144,7 +148,7 @@ export default function PersonnelPage() {
                           <DropdownMenuItem key={index} asChild>
                              <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
                                 <FileText className="h-4 w-4" />
-                                {doc.name || `مدرک ${index + 1}`}
+                                {doc.name || `مدرک ${toPersianDigits(index + 1)}`}
                             </a>
                           </DropdownMenuItem>
                         ))}

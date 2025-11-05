@@ -168,7 +168,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">شماره تماس:</span>
-                    <span className="font-semibold">{selectedVilla.contact}</span>
+                    <span className="font-semibold">{toPersianDigits(selectedVilla.contact || '-')}</span>
                 </div>
                  <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">وضعیت:</span>
@@ -186,7 +186,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">تماس مستاجر:</span>
-                      <span className="font-semibold">{selectedVilla.tenantContact}</span>
+                      <span className="font-semibold">{toPersianDigits(selectedVilla.tenantContact || '-')}</span>
                     </div>
                   </>
                 )}
@@ -204,4 +204,3 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
     </div>
   );
 }
-
