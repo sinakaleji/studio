@@ -2,11 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from 'next/link';
 import PageHeader from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Building, User, UserX, Home, Tag, Phone } from "lucide-react";
+import { Users, Building, User, UserX, Home, Tag, Phone, Shield, ArrowLeft } from "lucide-react";
 import Clock from "./_components/clock";
 import PersianCalendar from "./_components/persian-calendar";
+import GuardShiftCard from "./_components/guard-shift-card";
 import { getVillas, getPersonnel } from "@/lib/data-manager";
 import type { Villa, Personnel } from "@/lib/types";
 import { toPersianDigits } from "@/lib/utils";
@@ -160,15 +162,20 @@ export default function DashboardPage() {
         </div>
       </TooltipProvider>
 
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-        <Card>
-            <CardHeader>
-                <CardTitle>تقویم</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <PersianCalendar />
-            </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <div className="lg:col-span-4">
+            <GuardShiftCard />
+        </div>
+        <div className="lg:col-span-3">
+            <Card>
+                <CardHeader>
+                    <CardTitle>تقویم</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <PersianCalendar />
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </main>
   );
