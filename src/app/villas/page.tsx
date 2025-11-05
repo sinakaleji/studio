@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import AddVilla from "./_components/add-villa";
 import AddBuilding from "./_components/add-building";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon, Tag } from "lucide-react";
+import { Edit, Trash2, Upload, Map, Check, X, Building as BuildingIcon, Tag } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -303,8 +303,7 @@ export default function VillasPage() {
               <TableHead className="text-center">وضعیت سکونت</TableHead>
               <TableHead className="text-center">وضعیت فروش</TableHead>
               <TableHead className="min-w-[200px] text-center">مشخصات</TableHead>
-              <TableHead className="min-w-[150px] text-center">نام مستاجر</TableHead>
-              <TableHead className="min-w-[150px] text-center">نام خانوادگی مستاجر</TableHead>
+              <TableHead className="min-w-[150px] text-center">مستاجر</TableHead>
               <TableHead className="min-w-[120px] text-center">تماس مستاجر</TableHead>
               <TableHead className="min-w-[120px] text-center">عملیات</TableHead>
             </TableRow>
@@ -329,8 +328,7 @@ export default function VillasPage() {
                     )}
                 </TableCell>
                 <TableCell className="text-center">{generateVillaSpecs(villa)}</TableCell>
-                <TableCell className="text-center">{villa.tenant ? villa.tenant.firstName : "-"}</TableCell>
-                <TableCell className="text-center">{villa.tenant ? villa.tenant.lastName : "-"}</TableCell>
+                <TableCell className="text-center">{villa.tenant ? `${villa.tenant.firstName} ${villa.tenant.lastName}` : "-"}</TableCell>
                 <TableCell className="text-center">{villa.tenant ? toPersianDigits(villa.tenant.contact) : "-"}</TableCell>
                 <TableCell className="flex justify-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleEditVilla(villa)}>
