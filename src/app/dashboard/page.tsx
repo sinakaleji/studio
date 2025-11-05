@@ -4,28 +4,62 @@
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Building, UserCheck } from "lucide-react";
+import { Users, Building, User, UserX, Home, Tag } from "lucide-react";
 import Clock from "./_components/clock";
 import PersianCalendar from "./_components/persian-calendar";
 import { getVillas, getPersonnel } from "@/lib/data-manager";
+import type { Villa } from "@/lib/types";
 import { toPersianDigits } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+
+interface VillaStats {
+  ownerOccupied: Villa[];
+  rented: Villa[];
+  vacant: Villa[];
+  forSale: Villa[];
+  total: number;
+}
 
 export default function DashboardPage() {
   const [villasCount, setVillasCount] = useState(0);
   const [personnelCount, setPersonnelCount] = useState(0);
+  const [villaStats, setVillaStats] = useState<VillaStats>({
+      ownerOccupied: [],
+      rented: [],
+      vacant: [],
+      forSale: [],
+      total: 0
+  });
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    setVillasCount(getVillas().length);
+    const allVillas = getVillas();
+    const ownerOccupied = allVillas.filter(v => v.occupancyStatus === 'owner-occupied');
+    const rented = allVillas.filter(v => v.occupancyStatus === 'rented');
+    const vacant = allVillas.filter(v => v.occupancyStatus === 'vacant');
+    const forSale = allVillas.filter(v => v.isForSale);
+
+    setVillasCount(allVillas.length);
     setPersonnelCount(getPersonnel().length);
+    setVillaStats({ ownerOccupied, rented, vacant, forSale, total: allVillas.length });
   }, []);
 
-  const stats = [
-    { title: "تعداد کل ویلاها", value: toPersianDigits(villasCount), icon: Building },
-    { title: "تعداد پرسنل", value: toPersianDigits(personnelCount), icon: Users },
-    { title: "ساکنین", value: toPersianDigits(villasCount), icon: UserCheck },
+  const statsCards = [
+    { title: "تعداد کل ویلاها", value: toPersianDigits(villasCount), icon: Building, data: [], tooltip: "تعداد کل ویلاهای ثبت شده" },
+    { title: "تعداد پرسنل", value: toPersianDigits(personnelCount), icon: Users, data: [], tooltip: "تعداد کل پرسنل" },
+    { title: "مالک ساکن", value: toPersianDigits(villaStats.ownerOccupied.length), icon: User, data: villaStats.ownerOccupied, tooltip: "ویلاهای با مالک ساکن" },
+    { title: "مستأجر", value: toPersianDigits(villaStats.rented.length), icon: Home, data: villaStats.rented, tooltip: "ویلاهای اجاره داده شده" },
+    { title: "خالی", value: toPersianDigits(villaStats.vacant.length), icon: UserX, data: villaStats.vacant, tooltip: "ویلاهای خالی" },
+    { title: "آماده فروش", value: toPersianDigits(villaStats.forSale.length), icon: Tag, data: villaStats.forSale, tooltip: "ویلاهای برای فروش" },
   ];
+
 
   if (!isClient) {
     // You can render a loading skeleton here
@@ -40,20 +74,36 @@ export default function DashboardPage() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <PageHeader title="داشبورد" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-         <Clock />
-      </div>
+       <TooltipProvider>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {statsCards.map((stat) => (
+            <Tooltip key={stat.title}>
+              <TooltipTrigger asChild>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent>
+                {stat.data.length > 0 ? (
+                  <p>
+                    شماره واحدها: {toPersianDigits(stat.data.map(v => v.villaNumber).join(', '))}
+                  </p>
+                ) : (
+                    <p>{stat.tooltip}</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+           <Clock />
+        </div>
+      </TooltipProvider>
+
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
         <Card>
             <CardHeader>
@@ -67,3 +117,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
