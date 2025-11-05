@@ -293,7 +293,9 @@ export default function VillasPage() {
               <TableHead className="min-w-[150px] text-center">مالک</TableHead>
               <TableHead className="min-w-[120px] text-center">شماره تماس</TableHead>
               <TableHead className="text-center">وضعیت</TableHead>
-              <TableHead className="min-w-[200px] text-center">اطلاعات مستاجر</TableHead>
+              <TableHead className="min-w-[150px] text-center">نام مستاجر</TableHead>
+              <TableHead className="min-w-[150px] text-center">نام خانوادگی مستاجر</TableHead>
+              <TableHead className="min-w-[120px] text-center">تماس مستاجر</TableHead>
               <TableHead className="min-w-[120px] text-center">عملیات</TableHead>
             </TableRow>
           </TableHeader>
@@ -316,9 +318,9 @@ export default function VillasPage() {
                         )}
                     </div>
                 </TableCell>
-                <TableCell className="text-center">
-                  {villa.tenant ? `${villa.tenant.firstName} ${villa.tenant.lastName} - ${toPersianDigits(villa.tenant.contact)}` : "-"}
-                </TableCell>
+                <TableCell className="text-center">{villa.tenant ? villa.tenant.firstName : "-"}</TableCell>
+                <TableCell className="text-center">{villa.tenant ? villa.tenant.lastName : "-"}</TableCell>
+                <TableCell className="text-center">{villa.tenant ? toPersianDigits(villa.tenant.contact) : "-"}</TableCell>
                 <TableCell className="flex justify-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleEditVilla(villa)}>
                     <Edit className="h-4 w-4" />
