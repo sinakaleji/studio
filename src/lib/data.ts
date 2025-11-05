@@ -14,7 +14,7 @@ export const mockVillas: Villa[] = [
     { id: 'v3', villaNumber: 3, ownerFirstName: 'احمدی', ownerLastName: '(احمدی) گنج', contact: '0912-114-8481', occupancyStatus: 'owner-occupied', isForSale: true, mapPosition: { top: '10%', left: '55%' } },
     { id: 'v4', villaNumber: 4, ownerFirstName: 'احمدی', ownerLastName: 'گنج', contact: '0912-112-2387', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '10%', left: '75%' } },
     { id: 'v5', villaNumber: 5, ownerFirstName: 'مندری', ownerLastName: '', contact: '0912-114-3803', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '30%', left: '15%' } },
-    { id: 'v6', villaNumber: 6, ownerFirstName: 'احمدی', ownerLastName: 'لنج', contact: '0912-112-2387', occupancyStatus: 'rented', tenantInfo: 'علی رضایی - 09129876543', isForSale: true, mapPosition: { top: '30%', left: '35%' } },
+    { id: 'v6', villaNumber: 6, ownerFirstName: 'احمدی', ownerLastName: 'لنج', contact: '0912-112-2387', occupancyStatus: 'rented', tenant: { firstName: 'علی', lastName: 'رضایی', contact: '09129876543'}, isForSale: true, mapPosition: { top: '30%', left: '35%' } },
     { id: 'v7', villaNumber: 7, ownerFirstName: 'تهرانی', ownerLastName: '', contact: '0912-477-2848', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '30%', left: '55%' } },
     { id: 'v8', villaNumber: 8, ownerFirstName: 'ظفرمندی', ownerLastName: '', contact: '0912-450-6178', occupancyStatus: 'vacant', isForSale: true, mapPosition: { top: '30%', left: '75%' } },
     { id: 'v9', villaNumber: 9, ownerFirstName: 'مهدی', ownerLastName: '(احمدی) گنج', contact: '0912-111-0100', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '50%', left: '15%' } },
@@ -28,7 +28,7 @@ export const mockVillas: Villa[] = [
     { id: 'v17', villaNumber: 17, ownerFirstName: 'شجاعی', ownerLastName: '', contact: '0912-106-3777', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '90%', left: '15%' } },
     { id: 'v18', villaNumber: 18, ownerFirstName: 'روحانی', ownerLastName: '', contact: '0912-119-5271', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '90%', left: '35%' } },
     { id: 'v19', villaNumber: 19, ownerFirstName: 'هاشمی', ownerLastName: 'جو', contact: '0913-111-2799', occupancyStatus: 'owner-occupied', isForSale: false, mapPosition: { top: '90%', left: '55%' } },
-    { id: 'v20', villaNumber: 20, ownerFirstName: 'مقصودی', ownerLastName: '', contact: '0911-902-1145', occupancyStatus: 'rented', tenantInfo: 'مریم محمدی - 09351112233', isForSale: false, mapPosition: { top: '90%', left: '75%' } },
+    { id: 'v20', villaNumber: 20, ownerFirstName: 'مقصودی', ownerLastName: '', contact: '0911-902-1145', occupancyStatus: 'rented', tenant: { firstName: 'مریم', lastName: 'محمدی', contact: '09351112233'}, isForSale: false, mapPosition: { top: '90%', left: '75%' } },
 ];
 
 export const mockBoardMembers: BoardMember[] = [

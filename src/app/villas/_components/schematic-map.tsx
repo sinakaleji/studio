@@ -191,12 +191,13 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                     </Badge>
                   </div>
                 )}
-                {selectedVilla.occupancyStatus === 'rented' && selectedVilla.tenantInfo && (
+                {selectedVilla.occupancyStatus === 'rented' && selectedVilla.tenant && (
                   <div className="flex flex-col gap-2 pt-4 border-t mt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">اطلاعات مستاجر:</span>
                       </div>
-                      <p className="text-sm font-semibold whitespace-pre-wrap">{selectedVilla.tenantInfo}</p>
+                      <p className="text-sm font-semibold whitespace-pre-wrap">{`${selectedVilla.tenant.firstName} ${selectedVilla.tenant.lastName}`}</p>
+                      <p className="text-sm font-semibold whitespace-pre-wrap">{toPersianDigits(selectedVilla.tenant.contact)}</p>
                   </div>
                 )}
               </div>

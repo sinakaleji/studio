@@ -23,7 +23,11 @@ export interface Villa {
   ownerLastName: string;
   occupancyStatus: VillaOccupancyStatus;
   isForSale: boolean;
-  tenantInfo?: string;
+  tenant?: {
+    firstName: string;
+    lastName: string;
+    contact: string;
+  };
   contact?: string;
   mapPosition: { top: string; left: string };
 }
