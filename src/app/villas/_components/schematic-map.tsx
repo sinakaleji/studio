@@ -72,12 +72,32 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
     if (!isEditMode || !draggingItem || !mapRef.current) return;
     
     const mapRect = mapRef.current.getBoundingClientRect();
+    const snapThreshold = 1.5; // Snap within 1.5% of map dimensions
+
     let newX = e.clientX - mapRect.left - offsetRef.current.x;
     let newY = e.clientY - mapRect.top - offsetRef.current.y;
     
     let topPercent = Math.max(0, Math.min(100, (newY / mapRect.height) * 100));
     let leftPercent = Math.max(0, Math.min(100, (newX / mapRect.width) * 100));
     
+    // Snap logic
+    const otherItems = items.filter(item => item.id !== draggingItem);
+    for (const otherItem of otherItems) {
+        if (otherItem.mapPosition) {
+            const otherTop = parseFloat(otherItem.mapPosition.top);
+            const otherLeft = parseFloat(otherItem.mapPosition.left);
+
+            // Snap vertically
+            if (Math.abs(topPercent - otherTop) < snapThreshold) {
+                topPercent = otherTop;
+            }
+            // Snap horizontally
+            if (Math.abs(leftPercent - otherLeft) < snapThreshold) {
+                leftPercent = otherLeft;
+            }
+        }
+    }
+
     onItemMove(draggingItem, { top: `${topPercent}%`, left: `${leftPercent}%` });
   };
   
@@ -184,3 +204,4 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
     </div>
   );
 }
+
