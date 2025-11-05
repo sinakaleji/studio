@@ -11,8 +11,7 @@ import {
   Droppable,
   Draggable,
   type DropResult,
-  type DroppableProps,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,26 +38,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-// StrictDroppable wrapper for react-beautiful-dnd in React 18 Strict Mode
-const StrictDroppable = ({ children, ...props }: DroppableProps) => {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    const animation = requestAnimationFrame(() => setEnabled(true));
-    return () => {
-      cancelAnimationFrame(animation);
-      setEnabled(false);
-    };
-  }, []);
-
-  if (!enabled) {
-    return null;
-  }
-
-  return <Droppable {...props}>{children}</Droppable>;
-};
-
 
 const shiftConfigSchema = z.object({
   name: z.string().min(1),
@@ -425,7 +404,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <div className="p-2 border rounded-md min-h-[5rem]">
                   {isClient && (
                     <DragDropContext onDragEnd={onDragEnd}>
-                      <StrictDroppable droppableId="selectedGuards">
+                      <Droppable droppableId="selectedGuards">
                         {(provided) => (
                           <div {...provided.droppableProps} ref={provided.innerRef}>
                             {fields.map((guard, index) => (
@@ -444,7 +423,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                             {provided.placeholder}
                           </div>
                         )}
-                      </StrictDroppable>
+                      </Droppable>
                     </DragDropContext>
                   )}
                 </div>
@@ -605,5 +584,3 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     </div>
   );
 }
-
-    
