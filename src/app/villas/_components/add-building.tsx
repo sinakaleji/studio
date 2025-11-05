@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import type { Building } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddBuildingProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ interface AddBuildingProps {
 export default function AddBuilding({ isOpen, onOpenChange, onSave, building }: AddBuildingProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<Building['type'] | ''>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (building) {
@@ -38,8 +40,12 @@ export default function AddBuilding({ isOpen, onOpenChange, onSave, building }: 
   }, [building, isOpen]);
 
   const handleSubmit = () => {
-    if (!name || !type) {
-      // Add user feedback
+    if (!name) {
+      toast({ variant: "destructive", title: "خطا", description: "نام ساختمان الزامی است." });
+      return;
+    }
+     if (!type) {
+      toast({ variant: "destructive", title: "خطا", description: "نوع ساختمان را انتخاب کنید." });
       return;
     }
     onSave({

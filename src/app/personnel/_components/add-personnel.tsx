@@ -56,11 +56,26 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
     }
   }, [personnel, isOpen]);
 
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^09\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+  
   const handleSubmit = () => {
-    if (!firstName || !lastName || !role) {
-      // Add user feedback
+    if (!firstName || !lastName) {
+      toast({ variant: "destructive", title: "خطا", description: "نام و نام خانوادگی پرسنل الزامی است." });
       return;
     }
+     if (!role) {
+      toast({ variant: "destructive", title: "خطا", description: "لطفا نقش پرسنل را انتخاب کنید." });
+      return;
+    }
+     if (!validatePhoneNumber(contact)) {
+      toast({ variant: "destructive", title: "خطا", description: "شماره تماس معتبر نیست. (مثال: 09123456789)" });
+      return;
+    }
+
     onSave({
       id: personnel?.id,
       firstName,
@@ -150,7 +165,7 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
             <Label htmlFor="contact" className="text-right">
               شماره تماس
             </Label>
-            <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" />
+            <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
           </div>
           
           <div className="space-y-4 pt-4">

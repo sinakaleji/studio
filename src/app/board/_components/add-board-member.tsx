@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BoardMember } from "@/lib/types";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddBoardMemberProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export default function AddBoardMember({ isOpen, onOpenChange, onSave, member }:
   const [lastName, setLastName] = useState("");
   const [title, setTitle] = useState<BoardMember['title'] | ''>('');
   const [contact, setContact] = useState("");
+  const { toast } = useToast();
+
 
   useEffect(() => {
     if (member) {
@@ -43,11 +46,26 @@ export default function AddBoardMember({ isOpen, onOpenChange, onSave, member }:
     }
   }, [member, isOpen]);
 
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^09\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = () => {
-    if (!firstName || !lastName || !title) {
-      // Add user feedback
+    if (!firstName || !lastName) {
+      toast({ variant: "destructive", title: "خطا", description: "نام و نام خانوادگی عضو الزامی است." });
       return;
     }
+    if (!title) {
+      toast({ variant: "destructive", title: "خطا", description: "لطفا سمت عضو را انتخاب کنید." });
+      return;
+    }
+    if (!validatePhoneNumber(contact)) {
+      toast({ variant: "destructive", title: "خطا", description: "شماره تماس معتبر نیست. (مثال: 09123456789)" });
+      return;
+    }
+
     onSave({
       id: member?.id,
       firstName,
@@ -100,7 +118,7 @@ export default function AddBoardMember({ isOpen, onOpenChange, onSave, member }:
             <Label htmlFor="contact" className="text-right">
               شماره تماس
             </Label>
-            <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" />
+            <Input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
           </div>
         </div>
         <DialogFooter>

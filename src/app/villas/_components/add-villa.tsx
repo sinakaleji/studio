@@ -58,16 +58,36 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
     }
   }, [villa, isOpen]); // Rerun effect when dialog opens or villa data changes
 
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^09\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = () => {
-    // Basic validation
-    if (!villaNumber || !ownerFirstName || !ownerLastName) {
-      toast({
-        variant: "destructive",
-        title: "خطا در اعتبار سنجی",
-        description: "شماره ویلا و نام و نام خانوادگی مالک الزامی است.",
-      });
+    if (!villaNumber) {
+      toast({ variant: "destructive", title: "خطا", description: "لطفا شماره ویلا را وارد کنید." });
       return;
     }
+    if (!ownerFirstName || !ownerLastName) {
+      toast({ variant: "destructive", title: "خطا", description: "لطفا نام و نام خانوادگی مالک را وارد کنید." });
+      return;
+    }
+    if (!validatePhoneNumber(contact)) {
+      toast({ variant: "destructive", title: "خطا", description: "شماره تماس مالک معتبر نیست. (مثال: 09123456789)" });
+      return;
+    }
+    if (isRented) {
+      if (!tenantFirstName || !tenantLastName) {
+        toast({ variant: "destructive", title: "خطا", description: "لطفا نام و نام خانوادگی مستاجر را وارد کنید." });
+        return;
+      }
+      if (!validatePhoneNumber(tenantContact)) {
+        toast({ variant: "destructive", title: "خطا", description: "شماره تماس مستاجر معتبر نیست. (مثال: 09123456789)" });
+        return;
+      }
+    }
+
     onSave({
       id: villa?.id,
       villaNumber: parseInt(villaNumber, 10),
@@ -91,7 +111,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
             اطلاعات ویلا و ساکنین آن را وارد کنید.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="villaNumber" className="text-right">
               شماره ویلا
@@ -114,7 +134,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
             <Label htmlFor="contact" className="text-right">
               تماس مالک
             </Label>
-            <Input id="contact" value={contact} onChange={e => setContact(e.target.value)} className="col-span-3" />
+            <Input id="contact" value={contact} onChange={e => setContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="isRented" className="text-right">
@@ -140,7 +160,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
                 <Label htmlFor="tenantContact" className="text-right">
                   تماس مستاجر
                 </Label>
-                <Input id="tenantContact" value={tenantContact} onChange={e => setTenantContact(e.target.value)} className="col-span-3" />
+                <Input id="tenantContact" value={tenantContact} onChange={e => setTenantContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
               </div>
             </>
           )}
