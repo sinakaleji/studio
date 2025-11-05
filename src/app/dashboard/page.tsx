@@ -163,12 +163,14 @@ export default function DashboardPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>ویلاهای {stat.title}</AlertDialogTitle>
                           {stat.data.length > 0 ? (
-                            <AlertDialogDescription>
-                              لیست شماره ویلاهای مربوط به این دسته:
+                            <>
+                              <AlertDialogDescription>
+                                لیست شماره ویلاهای مربوط به این دسته:
+                              </AlertDialogDescription>
                               <div className="pt-4 font-mono text-lg text-foreground text-center tracking-widest">
                                 {toPersianDigits(stat.data.map(v => v.villaNumber).join(' - '))}
                               </div>
-                            </AlertDialogDescription>
+                            </>
                           ) : (
                             <AlertDialogDescription>
                               {stat.title === "تعداد کل ویلاها" ? `در حال حاضر ${stat.value} ویلا ثبت شده است.` : "موردی برای نمایش در این دسته وجود ندارد."}
