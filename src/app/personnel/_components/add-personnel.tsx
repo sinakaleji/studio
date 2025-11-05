@@ -19,21 +19,24 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { toPersianDigits } from "@/lib/utils";
 
 
 interface AddPersonnelProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<Personnel, 'id'> & { id?: string }) => void;
+  onSave: (data: Omit<Personnel, 'id' | 'personnelNumber'> & { id?: string; personnelNumber?: string; }) => void;
   personnel: Personnel | null;
+  nextPersonnelNumber: string;
 }
 
-export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }: AddPersonnelProps) {
+export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel, nextPersonnelNumber }: AddPersonnelProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<Personnel['role'] | ''>('');
   const [contact, setContact] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [personnelNumber, setPersonnelNumber] = useState("");
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -42,19 +45,21 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
     setAvailableRoles(settings.personnelRoles);
 
     if (personnel) {
+      setPersonnelNumber(personnel.personnelNumber);
       setFirstName(personnel.firstName || "");
       setLastName(personnel.lastName || "");
       setRole(personnel.role || "");
       setContact(personnel.contact || "");
       setDocuments(personnel.documents || []);
     } else {
+      setPersonnelNumber(nextPersonnelNumber);
       setFirstName("");
       setLastName("");
       setRole("");
       setContact("");
       setDocuments([]);
     }
-  }, [personnel, isOpen]);
+  }, [personnel, isOpen, nextPersonnelNumber]);
 
   const validatePhoneNumber = (phone: string) => {
     if (!phone) return true; // Optional field
@@ -78,6 +83,7 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
 
     onSave({
       id: personnel?.id,
+      personnelNumber,
       firstName,
       lastName,
       role: role as Personnel['role'],
@@ -134,6 +140,12 @@ export default function AddPersonnel({ isOpen, onOpenChange, onSave, personnel }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="personnelNumber" className="text-right">
+              شماره پرسنلی
+            </Label>
+            <Input id="personnelNumber" value={toPersianDigits(personnelNumber)} readOnly className="col-span-3 bg-muted" />
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="firstName" className="text-right">
               نام

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PageHeader from "@/components/page-header";
 import { getPersonnel, savePersonnel } from "@/lib/data-manager";
 import type { Personnel } from "@/lib/types";
@@ -29,6 +29,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toPersianDigits } from "@/lib/utils";
+
+
+const generateNextPersonnelNumber = (allPersonnel: Personnel[]): string => {
+    if (!allPersonnel.length) {
+        return "001";
+    }
+    const maxNumber = allPersonnel.reduce((max, p) => {
+        const num = parseInt(p.personnelNumber, 10);
+        return num > max ? num : max;
+    }, 0);
+    return (maxNumber + 1).toString().padStart(3, '0');
+};
+
 
 export default function PersonnelPage() {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -41,16 +55,20 @@ export default function PersonnelPage() {
     setPersonnel(getPersonnel());
   }, []);
 
-  const handleSave = (personnelData: Omit<Personnel, 'id'> & { id?: string }) => {
+  const nextPersonnelNumber = useMemo(() => generateNextPersonnelNumber(personnel), [personnel]);
+
+
+  const handleSave = (personnelData: Omit<Personnel, 'id' | 'personnelNumber'> & { id?: string; personnelNumber?: string }) => {
     let updatedPersonnel;
     if (personnelData.id) {
       updatedPersonnel = personnel.map((p) =>
-        p.id === personnelData.id ? { ...p, ...personnelData } : p
+        p.id === personnelData.id ? { ...p, ...personnelData, personnelNumber: p.personnelNumber } : p
       );
     } else {
       const newPersonnel: Personnel = {
         ...personnelData,
         id: `p${Date.now()}`,
+        personnelNumber: personnelData.personnelNumber || generateNextPersonnelNumber(personnel),
       };
       updatedPersonnel = [...personnel, newPersonnel];
     }
@@ -87,6 +105,7 @@ export default function PersonnelPage() {
         onOpenChange={setIsAddPersonnelOpen}
         onSave={handleSave}
         personnel={editingPersonnel}
+        nextPersonnelNumber={nextPersonnelNumber}
       />
       <PageHeader title="مدیریت پرسنل">
         <Button onClick={handleAddNew}>افزودن پرسنل</Button>
@@ -95,6 +114,7 @@ export default function PersonnelPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>شماره پرسنلی</TableHead>
               <TableHead>نام و نام خانوادگی</TableHead>
               <TableHead>نقش</TableHead>
               <TableHead>شماره تماس</TableHead>
@@ -105,6 +125,7 @@ export default function PersonnelPage() {
           <TableBody>
             {personnel.map((person) => (
               <TableRow key={person.id}>
+                <TableCell className="font-medium">{toPersianDigits(person.personnelNumber)}</TableCell>
                 <TableCell className="font-medium">{`${person.firstName} ${person.lastName}`}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{person.role}</Badge>

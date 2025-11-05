@@ -7,6 +7,7 @@ export interface Document {
 
 export interface Personnel {
   id: string;
+  personnelNumber: string;
   firstName: string;
   lastName: string;
   role: string;
