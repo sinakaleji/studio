@@ -11,6 +11,7 @@ import {
   Droppable,
   Draggable,
   type DropResult,
+  type DroppableProps,
 } from "react-beautiful-dnd";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+// StrictDroppable wrapper for react-beautiful-dnd in React 18 Strict Mode
+const StrictDroppable = ({ children, ...props }: DroppableProps) => {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    const animation = requestAnimationFrame(() => setEnabled(true));
+    return () => {
+      cancelAnimationFrame(animation);
+      setEnabled(false);
+    };
+  }, []);
+
+  if (!enabled) {
+    return null;
+  }
+
+  return <Droppable {...props}>{children}</Droppable>;
+};
+
 
 const shiftConfigSchema = z.object({
   name: z.string().min(1),
@@ -183,49 +204,50 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const today = startOfToday();
     const monthFirstDay = startOfMonth(startDate);
     
-    const existingDates = existingSchedule ? Object.keys(existingSchedule).sort() : [];
-    let scheduleStartDate = monthFirstDay;
+    let lastUsedGuardIndex = -1;
+
+    // Determine starting guard index from existing schedule
+    if (existingSchedule) {
+      const sortedDates = Object.keys(existingSchedule).sort();
+      if (sortedDates.length > 0) {
+        const lastDateStr = sortedDates[sortedDates.length - 1];
+        const lastDayGuards = existingSchedule[lastDateStr];
+        if (lastDayGuards && lastDayGuards.length > 0) {
+          const lastGuardName = lastDayGuards[lastDayGuards.length - 1];
+          const foundIndex = selectedGuards.findIndex(g => g.name === lastGuardName);
+          if (foundIndex !== -1) {
+            lastUsedGuardIndex = foundIndex;
+          }
+        }
+      }
+    }
     
+    let guardIndex = (lastUsedGuardIndex + 1);
+
+    let scheduleStartDate = monthFirstDay;
     if (isSameMonth(startDate, today) && isAfter(today, monthFirstDay)) {
         scheduleStartDate = today;
     }
-    
-    if (existingDates.length > 0) {
-        const lastDateStr = existingDates[existingDates.length - 1];
-        try {
-            const lastDate = parse(lastDateStr, 'yyyy-MM-dd', new Date());
-             if (isAfter(monthFirstDay, lastDate)) {
-                 scheduleStartDate = monthFirstDay; // User is generating for a future, non-consecutive month
-             }
-        } catch (e) { /* ignore and proceed with default start date */ }
-    } else if (isSameMonth(startDate, today)) {
-        scheduleStartDate = today; // No existing schedule, start from today for current month
-    }
-    
+
     const daysInMonth = getDaysInMonth(monthFirstDay);
     const startDayOffset = differenceInDays(scheduleStartDate, monthFirstDay);
     
     const numShifts = shifts.length;
-    let guardIndex = 0;
-
-    if (existingSchedule && existingDates.length > 0) {
-        const lastDateStr = existingDates[existingDates.length - 1];
-        const lastDayGuards = existingSchedule[lastDateStr];
-        if (lastDayGuards && lastDayGuards.length > 0) {
-            const lastGuardName = lastDayGuards[lastDayGuards.length - 1];
-            const lastGuardIndex = selectedGuards.findIndex(g => g.name === lastGuardName);
-            if (lastGuardIndex !== -1) {
-                guardIndex = (lastGuardIndex + 1); // Start with the next guard
-            }
-        }
-    }
-
 
     for (let i = startDayOffset; i < daysInMonth; i++) {
         const currentDate = addDays(monthFirstDay, i);
         const dateKey = format(currentDate, 'yyyy-MM-dd');
         
-        if (newSchedule[dateKey]) continue;
+        // Skip if a schedule for this day already exists
+        if (newSchedule[dateKey]) {
+           // We need to find out what the last guard was for this day to continue correctly
+           const lastGuardNameOnSkippedDay = newSchedule[dateKey][newSchedule[dateKey].length - 1];
+           const foundIndex = selectedGuards.findIndex(g => g.name === lastGuardNameOnSkippedDay);
+            if (foundIndex !== -1) {
+                guardIndex = (foundIndex + 1);
+            }
+           continue;
+        };
 
         const dailyGuards: string[] = [];
         for (let j = 0; j < numShifts; j++) {
@@ -403,7 +425,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 <div className="p-2 border rounded-md min-h-[5rem]">
                   {isClient && (
                     <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="selectedGuards">
+                      <StrictDroppable droppableId="selectedGuards">
                         {(provided) => (
                           <div {...provided.droppableProps} ref={provided.innerRef}>
                             {fields.map((guard, index) => (
@@ -422,7 +444,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                             {provided.placeholder}
                           </div>
                         )}
-                      </Droppable>
+                      </StrictDroppable>
                     </DragDropContext>
                   )}
                 </div>
