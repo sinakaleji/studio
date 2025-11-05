@@ -118,24 +118,24 @@ export default function PersonnelPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>شماره پرسنلی</TableHead>
-              <TableHead>نام و نام خانوادگی</TableHead>
-              <TableHead>نقش</TableHead>
-              <TableHead>شماره تماس</TableHead>
-              <TableHead>مدارک</TableHead>
-              <TableHead>عملیات</TableHead>
+              <TableHead className="text-center">شماره پرسنلی</TableHead>
+              <TableHead className="text-center">نام و نام خانوادگی</TableHead>
+              <TableHead className="text-center">نقش</TableHead>
+              <TableHead className="text-center">شماره تماس</TableHead>
+              <TableHead className="text-center">مدارک</TableHead>
+              <TableHead className="text-center">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {personnel.map((person) => (
               <TableRow key={person.id}>
-                <TableCell className="font-medium">{toPersianDigits(person.personnelNumber)}</TableCell>
-                <TableCell className="font-medium">{`${person.firstName} ${person.lastName}`}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium text-center">{toPersianDigits(person.personnelNumber)}</TableCell>
+                <TableCell className="font-medium text-center">{`${person.firstName} ${person.lastName}`}</TableCell>
+                <TableCell className="text-center">
                   <Badge variant="secondary">{person.role}</Badge>
                 </TableCell>
-                <TableCell>{person.contact}</TableCell>
-                 <TableCell>
+                <TableCell className="text-center">{person.contact}</TableCell>
+                 <TableCell className="text-center">
                   {person.documents && person.documents.length > 0 ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -158,7 +158,7 @@ export default function PersonnelPage() {
                     "-"
                   )}
                 </TableCell>
-                <TableCell className="flex gap-2">
+                <TableCell className="flex justify-center gap-2">
                    <Button variant="outline" size="icon" onClick={() => handleEdit(person)}>
                     <Edit className="h-4 w-4" />
                   </Button>

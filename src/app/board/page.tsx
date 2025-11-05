@@ -94,21 +94,21 @@ export default function BoardPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>نام و نام خانوادگی</TableHead>
-              <TableHead>سمت</TableHead>
-              <TableHead>شماره تماس</TableHead>
-              <TableHead>عملیات</TableHead>
+              <TableHead className="text-center">نام و نام خانوادگی</TableHead>
+              <TableHead className="text-center">سمت</TableHead>
+              <TableHead className="text-center">شماره تماس</TableHead>
+              <TableHead className="text-center">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {boardMembers.map((member) => (
               <TableRow key={member.id}>
-                <TableCell className="font-medium">{`${member.firstName} ${member.lastName}`}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium text-center">{`${member.firstName} ${member.lastName}`}</TableCell>
+                <TableCell className="text-center">
                   <Badge>{member.title}</Badge>
                 </TableCell>
-                <TableCell>{member.contact}</TableCell>
-                 <TableCell className="flex gap-2">
+                <TableCell className="text-center">{member.contact}</TableCell>
+                 <TableCell className="flex justify-center gap-2">
                    <Button variant="outline" size="icon" onClick={() => handleEdit(member)}>
                     <Edit className="h-4 w-4" />
                   </Button>

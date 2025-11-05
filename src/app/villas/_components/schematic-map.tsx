@@ -191,17 +191,13 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                     </Badge>
                   </div>
                 )}
-                {selectedVilla.occupancyStatus === 'rented' && (
-                  <>
-                    <div className="flex justify-between items-center pt-4 border-t mt-2">
-                      <span className="text-muted-foreground">مستاجر:</span>
-                      <span className="font-semibold">{`${selectedVilla.tenantFirstName} ${selectedVilla.tenantLastName}`}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">تماس مستاجر:</span>
-                      <span className="font-semibold">{toPersianDigits(selectedVilla.tenantContact || '-')}</span>
-                    </div>
-                  </>
+                {selectedVilla.occupancyStatus === 'rented' && selectedVilla.tenantInfo && (
+                  <div className="flex flex-col gap-2 pt-4 border-t mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">اطلاعات مستاجر:</span>
+                      </div>
+                      <p className="text-sm font-semibold whitespace-pre-wrap">{selectedVilla.tenantInfo}</p>
+                  </div>
                 )}
               </div>
               <Button onClick={() => {

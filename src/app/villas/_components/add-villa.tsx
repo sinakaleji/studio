@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import type { Villa, VillaOccupancyStatus } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 interface AddVillaProps {
   isOpen: boolean;
@@ -38,9 +39,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
   const [contact, setContact] = useState("");
   const [occupancyStatus, setOccupancyStatus] = useState<VillaOccupancyStatus>('vacant');
   const [isForSale, setIsForSale] = useState(false);
-  const [tenantFirstName, setTenantFirstName] = useState("");
-  const [tenantLastName, setTenantLastName] = useState("");
-  const [tenantContact, setTenantContact] = useState("");
+  const [tenantInfo, setTenantInfo] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,9 +50,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       setContact(villa.contact || "");
       setOccupancyStatus(villa.occupancyStatus || 'vacant');
       setIsForSale(villa.isForSale || false);
-      setTenantFirstName(villa.tenantFirstName || "");
-      setTenantLastName(villa.tenantLastName || "");
-      setTenantContact(villa.tenantContact || "");
+      setTenantInfo(villa.tenantInfo || "");
     } else {
       // Reset form for new entry
       setVillaNumber("");
@@ -62,9 +59,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       setContact("");
       setOccupancyStatus('vacant');
       setIsForSale(false);
-      setTenantFirstName("");
-      setTenantLastName("");
-      setTenantContact("");
+      setTenantInfo("");
     }
   }, [villa, isOpen]); // Rerun effect when dialog opens or villa data changes
 
@@ -87,15 +82,9 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       toast({ variant: "destructive", title: "خطا", description: "شماره تماس مالک معتبر نیست. (مثال: 09123456789)" });
       return;
     }
-    if (occupancyStatus === 'rented') {
-      if (!tenantFirstName || !tenantLastName) {
-        toast({ variant: "destructive", title: "خطا", description: "لطفا نام و نام خانوادگی مستاجر را وارد کنید." });
+    if (occupancyStatus === 'rented' && !tenantInfo) {
+        toast({ variant: "destructive", title: "خطا", description: "لطفا اطلاعات مستاجر را وارد کنید." });
         return;
-      }
-      if (!validatePhoneNumber(tenantContact)) {
-        toast({ variant: "destructive", title: "خطا", description: "شماره تماس مستاجر معتبر نیست. (مثال: 09123456789)" });
-        return;
-      }
     }
 
     onSave({
@@ -106,9 +95,7 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
       contact,
       occupancyStatus,
       isForSale,
-      tenantFirstName: occupancyStatus === 'rented' ? tenantFirstName : "",
-      tenantLastName: occupancyStatus === 'rented' ? tenantLastName : "",
-      tenantContact: occupancyStatus === 'rented' ? tenantContact : "",
+      tenantInfo: occupancyStatus === 'rented' ? tenantInfo : "",
     });
     onOpenChange(false); // Close dialog on save
   };
@@ -172,26 +159,18 @@ export default function AddVilla({ isOpen, onOpenChange, onSave, villa }: AddVil
             </div>
           </div>
           {occupancyStatus === 'rented' && (
-            <>
-              <div className="grid grid-cols-4 items-center gap-4 pt-4 border-t">
-                <Label htmlFor="tenantFirstName" className="text-right">
-                  نام مستاجر
+             <div className="grid grid-cols-4 items-start gap-4 pt-4 border-t">
+                <Label htmlFor="tenantInfo" className="text-right pt-2">
+                  اطلاعات مستاجر
                 </Label>
-                <Input id="tenantFirstName" value={tenantFirstName} onChange={e => setTenantFirstName(e.target.value)} className="col-span-3" />
+                 <Textarea 
+                    id="tenantInfo"
+                    value={tenantInfo}
+                    onChange={(e) => setTenantInfo(e.target.value)}
+                    className="col-span-3"
+                    placeholder="نام، نام خانوادگی و شماره تماس مستاجر..."
+                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="tenantLastName" className="text-right">
-                  نام خانوادگی مستاجر
-                </Label>
-                <Input id="tenantLastName" value={tenantLastName} onChange={e => setTenantLastName(e.target.value)} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="tenantContact" className="text-right">
-                  تماس مستاجر
-                </Label>
-                <Input id="tenantContact" value={tenantContact} onChange={e => setTenantContact(e.target.value)} className="col-span-3" placeholder="مثال: 09123456789" />
-              </div>
-            </>
           )}
         </div>
         <DialogFooter>

@@ -289,23 +289,22 @@ export default function VillasPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[100px]">شماره ویلا</TableHead>
-              <TableHead className="min-w-[150px]">مالک</TableHead>
-              <TableHead className="min-w-[120px]">شماره تماس</TableHead>
-              <TableHead>وضعیت</TableHead>
-              <TableHead className="min-w-[150px]">مستاجر</TableHead>
-              <TableHead className="min-w-[120px]">تماس مستاجر</TableHead>
-              <TableHead className="min-w-[120px]">عملیات</TableHead>
+              <TableHead className="min-w-[100px] text-center">شماره ویلا</TableHead>
+              <TableHead className="min-w-[150px] text-center">مالک</TableHead>
+              <TableHead className="min-w-[120px] text-center">شماره تماس</TableHead>
+              <TableHead className="text-center">وضعیت</TableHead>
+              <TableHead className="min-w-[150px] text-center">اطلاعات مستاجر</TableHead>
+              <TableHead className="min-w-[120px] text-center">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[...villas].sort((a, b) => a.villaNumber - b.villaNumber).map((villa) => (
               <TableRow key={villa.id}>
-                <TableCell className="font-medium">{toPersianDigits(villa.villaNumber)}</TableCell>
-                <TableCell>{`${villa.ownerFirstName} ${villa.ownerLastName}`}</TableCell>
-                <TableCell>{villa.contact || "-"}</TableCell>
-                <TableCell>
-                    <div className="flex flex-col gap-1">
+                <TableCell className="font-medium text-center">{toPersianDigits(villa.villaNumber)}</TableCell>
+                <TableCell className="text-center">{`${villa.ownerFirstName} ${villa.ownerLastName}`}</TableCell>
+                <TableCell className="text-center">{villa.contact || "-"}</TableCell>
+                <TableCell className="text-center">
+                    <div className="flex flex-col items-center gap-1">
                         <Badge variant="outline" className={occupancyStatusMap[villa.occupancyStatus]?.className}>
                             {occupancyStatusMap[villa.occupancyStatus]?.text || villa.occupancyStatus}
                         </Badge>
@@ -317,9 +316,8 @@ export default function VillasPage() {
                         )}
                     </div>
                 </TableCell>
-                <TableCell>{villa.tenantFirstName ? `${villa.tenantFirstName} ${villa.tenantLastName}` : "-"}</TableCell>
-                <TableCell>{villa.tenantContact || "-"}</TableCell>
-                <TableCell className="flex gap-2">
+                <TableCell className="text-center">{villa.tenantInfo || "-"}</TableCell>
+                <TableCell className="flex justify-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleEditVilla(villa)}>
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -355,16 +353,16 @@ export default function VillasPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>نام ساختمان</TableHead>
-              <TableHead>نوع</TableHead>
-              <TableHead>عملیات</TableHead>
+              <TableHead className="text-center">نام ساختمان</TableHead>
+              <TableHead className="text-center">نوع</TableHead>
+              <TableHead className="text-center">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {buildings.map((building) => (
               <TableRow key={building.id}>
-                <TableCell className="font-medium">{building.name}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium text-center">{building.name}</TableCell>
+                <TableCell className="text-center">
                   <Badge variant="outline">{
                     {
                       'security': 'نگهبانی',
@@ -374,7 +372,7 @@ export default function VillasPage() {
                     }[building.type]
                   }</Badge>
                 </TableCell>
-                <TableCell className="flex gap-2">
+                <TableCell className="flex justify-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleEditBuilding(building)}>
                     <Edit className="h-4 w-4" />
                   </Button>
