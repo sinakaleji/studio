@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import AddVilla from "./_components/add-villa";
 import AddBuilding from "./_components/add-building";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon, Tag, ParkingCircle, BedDouble } from "lucide-react";
+import { Edit, Trash2, Upload, Map, Check, X, BuildingIcon, Tag } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -206,6 +206,14 @@ export default function VillasPage() {
         )
     );
   };
+  
+  const generateVillaSpecs = (villa: Villa) => {
+    const parts = [];
+    if (villa.bedrooms) parts.push(`${toPersianDigits(villa.bedrooms)} خواب`);
+    if (villa.area) parts.push(`${toPersianDigits(villa.area)} متر`);
+    if (villa.hasParking) parts.push('پارکینگ دارد');
+    return parts.join('، ') || '-';
+  };
 
   if (!isClient) {
     return null; // Or a loading spinner
@@ -294,9 +302,7 @@ export default function VillasPage() {
               <TableHead className="min-w-[120px] text-center">تماس مالک</TableHead>
               <TableHead className="text-center">وضعیت سکونت</TableHead>
               <TableHead className="text-center">وضعیت فروش</TableHead>
-              <TableHead className="text-center">خواب</TableHead>
-              <TableHead className="text-center">متراژ</TableHead>
-              <TableHead className="text-center">پارکینگ</TableHead>
+              <TableHead className="min-w-[200px] text-center">مشخصات</TableHead>
               <TableHead className="min-w-[150px] text-center">نام مستاجر</TableHead>
               <TableHead className="min-w-[150px] text-center">نام خانوادگی مستاجر</TableHead>
               <TableHead className="min-w-[120px] text-center">تماس مستاجر</TableHead>
@@ -322,11 +328,7 @@ export default function VillasPage() {
                         </Badge>
                     )}
                 </TableCell>
-                <TableCell className="text-center">{villa.bedrooms ? toPersianDigits(villa.bedrooms) : '-'}</TableCell>
-                <TableCell className="text-center">{villa.area ? `${toPersianDigits(villa.area)} متر` : '-'}</TableCell>
-                <TableCell className="text-center">
-                    {villa.hasParking ? <Check className="mx-auto text-green-600" /> : <X className="mx-auto text-destructive" />}
-                </TableCell>
+                <TableCell className="text-center">{generateVillaSpecs(villa)}</TableCell>
                 <TableCell className="text-center">{villa.tenant ? villa.tenant.firstName : "-"}</TableCell>
                 <TableCell className="text-center">{villa.tenant ? villa.tenant.lastName : "-"}</TableCell>
                 <TableCell className="text-center">{villa.tenant ? toPersianDigits(villa.tenant.contact) : "-"}</TableCell>
@@ -419,3 +421,5 @@ export default function VillasPage() {
     </main>
   );
 }
+
+    
