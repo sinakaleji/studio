@@ -188,22 +188,25 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     const monthFirstDay = startOfMonth(startDate);
     
     const existingDates = existingSchedule ? Object.keys(existingSchedule).sort() : [];
-    let scheduleStartDate = isSameMonth(startDate, today) ? today : monthFirstDay;
-
-    // Ensure we don't overwrite past days if generating for the current month
-    if (isSameMonth(startDate, today) && isBefore(monthFirstDay, today)) {
+    let scheduleStartDate = monthFirstDay;
+    
+    // If generating for the current month, start from today.
+    if (isSameMonth(startDate, today) && isAfter(today, monthFirstDay)) {
         scheduleStartDate = today;
     }
     
-    // If there is an existing schedule, start from the day after the last scheduled day
+    // If there is an existing schedule for a previous month, try to start from the day after the last scheduled day
+    // But only if the new month is directly after the old one. If they jump a month, restart.
     if (existingDates.length > 0) {
         const lastDateStr = existingDates[existingDates.length - 1];
         try {
             const lastDate = parse(lastDateStr, 'yyyy-MM-dd', new Date());
              if (isAfter(monthFirstDay, lastDate)) {
-                 scheduleStartDate = monthFirstDay;
+                 scheduleStartDate = monthFirstDay; // User is generating for a future, non-consecutive month
              }
         } catch (e) { /* ignore and proceed with default start date */ }
+    } else if (isSameMonth(startDate, today)) {
+        scheduleStartDate = today; // No existing schedule, start from today for current month
     }
     
     const daysInMonth = getDaysInMonth(monthFirstDay);
@@ -537,6 +540,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
+    
+
     
 
     
