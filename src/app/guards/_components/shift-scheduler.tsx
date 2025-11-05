@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
 import { CalendarIcon, Loader2, GripVertical, X, Trash2 } from "lucide-react";
-import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore, isSameMonth, differenceInDays } from "date-fns-jalali";
+import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore, isSameMonth, differenceInDays, isAfter } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -179,31 +179,60 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     move(result.source.index, result.destination.index);
   };
 
-  const generateLocalSchedule = (data: FormValues): Schedule => {
+  const generateLocalSchedule = (data: FormValues, existingSchedule: Schedule | null): Schedule => {
     const { selectedGuards, shiftType, startDate } = data;
     const shifts = data[`${shiftType}-shifts`];
-    const newSchedule: Schedule = {};
-    
+    const newSchedule: Schedule = existingSchedule ? { ...existingSchedule } : {};
+
     const today = startOfToday();
     const monthFirstDay = startOfMonth(startDate);
+    
+    const existingDates = existingSchedule ? Object.keys(existingSchedule).sort() : [];
+    let scheduleStartDate = isSameMonth(startDate, today) ? today : monthFirstDay;
 
-    // If the selected month is the current month and is not in the past, start from today.
-    // Otherwise, start from the first day of the selected month.
-    let scheduleStartDate = monthFirstDay;
-    if (isSameMonth(startDate, today) && !isBefore(monthFirstDay, today)) {
+    // Ensure we don't overwrite past days if generating for the current month
+    if (isSameMonth(startDate, today) && isBefore(monthFirstDay, today)) {
         scheduleStartDate = today;
     }
-
+    
+    // If there is an existing schedule, start from the day after the last scheduled day
+    if (existingDates.length > 0) {
+        const lastDateStr = existingDates[existingDates.length - 1];
+        try {
+            const lastDate = parse(lastDateStr, 'yyyy-MM-dd', new Date());
+             if (isAfter(monthFirstDay, lastDate)) {
+                 scheduleStartDate = monthFirstDay;
+             }
+        } catch (e) { /* ignore and proceed with default start date */ }
+    }
+    
     const daysInMonth = getDaysInMonth(monthFirstDay);
     const startDayOffset = differenceInDays(scheduleStartDate, monthFirstDay);
-
+    
     const numShifts = shifts.length;
     let guardIndex = 0;
+
+    // Find the starting guard index based on the end of the existing schedule
+    if (existingSchedule && existingDates.length > 0) {
+        const lastDateStr = existingDates[existingDates.length - 1];
+        const lastDayGuards = existingSchedule[lastDateStr];
+        if (lastDayGuards && lastDayGuards.length > 0) {
+            const lastGuardName = lastDayGuards[lastDayGuards.length - 1];
+            const lastGuardIndex = selectedGuards.findIndex(g => g.name === lastGuardName);
+            if (lastGuardIndex !== -1) {
+                guardIndex = (lastGuardIndex + 1); // Start with the next guard
+            }
+        }
+    }
+
 
     for (let i = startDayOffset; i < daysInMonth; i++) {
         const currentDate = addDays(monthFirstDay, i);
         const dateKey = format(currentDate, 'yyyy-MM-dd');
         
+        // Skip if date already exists in schedule
+        if (newSchedule[dateKey]) continue;
+
         const dailyGuards: string[] = [];
         for (let j = 0; j < numShifts; j++) {
             dailyGuards.push(selectedGuards[guardIndex % selectedGuards.length].name);
@@ -216,8 +245,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
 
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
-    setSchedule(null);
-
+    
     const shifts = data[`${data.shiftType}-shifts`];
     const shiftNames = shifts.map(s => `${s.name} (${toPersianDigits(s.start)} - ${toPersianDigits(s.end)})`);
     setCurrentShiftNames(shiftNames);
@@ -230,7 +258,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     }
 
     try {
-        const generatedSchedule = generateLocalSchedule(data);
+        const currentSchedule = schedule ? { ...schedule } : null;
+        const generatedSchedule = generateLocalSchedule(data, currentSchedule);
         setSchedule(generatedSchedule);
         if (typeof window !== 'undefined') {
           localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(generatedSchedule));
@@ -436,7 +465,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
             <CardFooter className="flex flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                    ایجاد برنامه شیفت
+                    ایجاد / بروزرسانی برنامه شیفت
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -485,7 +514,7 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(schedule).map(([date, assignedGuards]) => {
+                  {Object.entries(schedule).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()).map(([date, assignedGuards]) => {
                      const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
                      return (
                         <TableRow key={date}>
@@ -508,6 +537,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
+    
+
     
 
     
