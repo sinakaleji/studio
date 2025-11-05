@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Shield, ArrowLeft } from "lucide-react";
 import { toPersianDigits } from "@/lib/utils";
 import { format, addDays, parse } from "date-fns-jalali";
+import { faIR } from "date-fns-jalali/locale";
 import { Button } from "@/components/ui/button";
 
 const SCHEDULE_STORAGE_KEY = 'guardShiftSchedule';
@@ -69,7 +70,7 @@ export default function GuardShiftCard() {
           if (!shiftsByDay[dateKey]) {
             shiftsByDay[dateKey] = {
               date: toPersianDigits(dateKey),
-              dayName: format(shift.date, 'eeee', { locale: { code: 'fa' } }),
+              dayName: format(shift.date, 'eeee', { locale: faIR }),
               assignments: [],
             };
           }
