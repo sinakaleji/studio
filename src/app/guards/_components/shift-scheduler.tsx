@@ -23,10 +23,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@/hooks/use-toast";
 import type { Personnel } from "@/lib/types";
 import { cn, toPersianDigits } from "@/lib/utils";
-import { CalendarIcon, Loader2, GripVertical, X } from "lucide-react";
+import { CalendarIcon, Loader2, GripVertical, X, Trash2 } from "lucide-react";
 import { format, getYear, getDaysInMonth, addDays, startOfMonth, parse, startOfToday, isBefore } from "date-fns-jalali";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const shiftConfigSchema = z.object({
   name: z.string().min(1),
@@ -229,6 +240,21 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
     }
   }
 
+  const handleDeleteSchedule = () => {
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem(SCHEDULE_STORAGE_KEY);
+        localStorage.removeItem(SHIFT_NAMES_STORAGE_KEY);
+        localStorage.removeItem(FORM_VALUES_STORAGE_KEY);
+    }
+    setSchedule(null);
+    setCurrentShiftNames([]);
+    form.reset(); // Optionally reset the form to its default state
+    toast({
+        title: "موفقیت آمیز",
+        description: "برنامه شیفت با موفقیت حذف شد.",
+    });
+  };
+
   if (!isClient) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -395,11 +421,33 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
                 )}
               />
             </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                ایجاد برنامه شیفت
-              </Button>
+            <CardFooter className="flex flex-col gap-2">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    ایجاد برنامه شیفت
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button type="button" variant="destructive" className="w-full" disabled={!schedule}>
+                        <Trash2 className="ml-2 h-4 w-4" />
+                        حذف برنامه
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>آیا از حذف مطمئن هستید؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          این عمل قابل بازگشت نیست. کل برنامه شیفت فعلی حذف خواهد شد.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>انصراف</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteSchedule}>
+                          حذف
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </CardFooter>
           </form>
         </Form>
@@ -448,6 +496,8 @@ export default function ShiftScheduler({ guards }: ShiftSchedulerProps) {
       </Card>
     </div>
   );
+    
+
     
 
     
