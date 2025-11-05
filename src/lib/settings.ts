@@ -1,6 +1,6 @@
 
 import type { AppSettings } from './types';
-import { exportAllData as exportData, importAllData as importData } from './data-manager';
+import { exportSelectedData as exportData, importAllData as importData } from './data-manager';
 
 
 const SETTINGS_KEY = 'appSettings';
@@ -49,8 +49,8 @@ export function saveSettings(settings: AppSettings) {
 }
 
 
-export function exportAllData() {
-    return exportData();
+export function exportSelectedData(keys: string[]) {
+    return exportData(keys);
 }
 
 export function importAllData(data: { [key: string]: any }) {

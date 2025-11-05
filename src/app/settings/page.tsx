@@ -12,8 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { AppSettings } from "@/lib/types";
-import { getSettings, saveSettings, exportAllData, importAllData } from "@/lib/settings";
+import { getSettings, saveSettings, exportSelectedData, importAllData } from "@/lib/settings";
 import { Trash2, Upload, Download } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { VILLAS_KEY, PERSONNEL_KEY, BOARD_MEMBERS_KEY, BUILDINGS_KEY } from "@/lib/data-manager";
 
 
 const formSchema = z.object({
@@ -24,12 +26,27 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const exportOptions = [
+  { id: VILLAS_KEY, label: 'ویلاها' },
+  { id: PERSONNEL_KEY, label: 'پرسنل' },
+  { id: BOARD_MEMBERS_KEY, label: 'هیئت مدیره' },
+  { id: BUILDINGS_KEY, label: 'ساختمان‌ها' },
+];
+
+type ExportSelection = {
+  [key: string]: boolean;
+};
+
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
   const [newRole, setNewRole] = useState("");
   const importFileRef = useRef<HTMLInputElement>(null);
-
+  
+  const [exportSelection, setExportSelection] = useState<ExportSelection>(
+    exportOptions.reduce((acc, option) => ({ ...acc, [option.id]: true }), {})
+  );
 
   useEffect(() => {
     setIsClient(true);
@@ -69,11 +86,21 @@ export default function SettingsPage() {
   };
 
   const handleExport = () => {
-    const data = exportAllData();
+    const selectedKeys = Object.keys(exportSelection).filter(key => exportSelection[key]);
+    if (selectedKeys.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "حداقل یک مورد را برای پشتیبان‌گیری انتخاب کنید.",
+      });
+      return;
+    }
+
+    const data = exportSelectedData(selectedKeys);
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
     const link = document.createElement("a");
     link.href = jsonString;
-    link.download = "nilarose-backup.json";
+    link.download = `nilarose-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     toast({
         title: "موفقیت",
@@ -114,7 +141,20 @@ export default function SettingsPage() {
         event.target.value = "";
     }
   };
+  
+  const handleExportSelectionChange = (key: string) => {
+    setExportSelection(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
+  const handleSelectAllChange = (checked: boolean) => {
+    const newSelection: ExportSelection = {};
+    exportOptions.forEach(option => {
+      newSelection[option.id] = checked;
+    });
+    setExportSelection(newSelection);
+  };
+  
+  const areAllSelected = Object.values(exportSelection).every(Boolean);
 
   if (!isClient) {
     return null; // Or a loading spinner
@@ -211,25 +251,50 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>پشتیبان‌گیری و بازیابی</CardTitle>
               <CardDescription>
-                از تمام اطلاعات برنامه (ویلاها، پرسنل، هیئت مدیره و ساختمان‌ها) یک نسخه پشتیبان تهیه کنید یا اطلاعات را از یک فایل پشتیبان بازیابی کنید.
+                از اطلاعات برنامه یک نسخه پشتیبان تهیه کنید یا اطلاعات را از یک فایل پشتیبان بازیابی کنید.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row gap-4">
-                 <input
-                    type="file"
-                    ref={importFileRef}
-                    className="hidden"
-                    accept=".json"
-                    onChange={handleImport}
-                />
-                <Button variant="outline" onClick={handleImportClick}>
-                    <Upload className="ml-2 h-4 w-4" />
-                    بازیابی از فایل (Import)
-                </Button>
-                 <Button onClick={handleExport}>
-                    <Download className="ml-2 h-4 w-4" />
-                    دانلود نسخه پشتیبان (Export)
-                </Button>
+            <CardContent className="space-y-6">
+                <div>
+                  <h4 className="font-medium mb-4">انتخاب بخش‌ها برای پشتیبان‌گیری (Export):</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                          <Checkbox
+                              id="select-all"
+                              checked={areAllSelected}
+                              onCheckedChange={(checked) => handleSelectAllChange(Boolean(checked))}
+                          />
+                          <label htmlFor="select-all" className="font-medium">انتخاب همه</label>
+                      </div>
+                      {exportOptions.map(option => (
+                        <div key={option.id} className="flex items-center space-x-2 space-x-reverse">
+                            <Checkbox 
+                                id={option.id}
+                                checked={exportSelection[option.id]}
+                                onCheckedChange={() => handleExportSelectionChange(option.id)}
+                            />
+                            <label htmlFor={option.id}>{option.label}</label>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <input
+                        type="file"
+                        ref={importFileRef}
+                        className="hidden"
+                        accept=".json"
+                        onChange={handleImport}
+                    />
+                    <Button variant="outline" onClick={handleImportClick}>
+                        <Upload className="ml-2 h-4 w-4" />
+                        بازیابی از فایل (Import)
+                    </Button>
+                    <Button onClick={handleExport}>
+                        <Download className="ml-2 h-4 w-4" />
+                        دانلود نسخه پشتیبان (Export)
+                    </Button>
+                </div>
             </CardContent>
           </Card>
       </div>

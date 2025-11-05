@@ -5,15 +5,15 @@ import { mockVillas, mockPersonnel, mockBoardMembers, mockBuildings } from "./da
 import type { Villa, Personnel, BoardMember, Building } from "./types";
 import { PlaceHolderImages } from "./placeholder-images";
 
-const VILLAS_KEY = 'villas';
-const PERSONNEL_KEY = 'personnel';
-const BOARD_MEMBERS_KEY = 'boardMembers';
-const BUILDINGS_KEY = 'buildings';
-const MAP_IMAGE_URL_KEY = 'mapImageUrl';
+export const VILLAS_KEY = 'villas';
+export const PERSONNEL_KEY = 'personnel';
+export const BOARD_MEMBERS_KEY = 'boardMembers';
+export const BUILDINGS_KEY = 'buildings';
+export const MAP_IMAGE_URL_KEY = 'mapImageUrl';
+
+export const ALL_DATA_KEYS = [VILLAS_KEY, PERSONNEL_KEY, BOARD_MEMBERS_KEY, BUILDINGS_KEY];
 
 type DataType = 'villas' | 'personnel' | 'boardMembers' | 'buildings';
-
-const ALL_DATA_KEYS = [VILLAS_KEY, PERSONNEL_KEY, BOARD_MEMBERS_KEY, BUILDINGS_KEY];
 
 function initializeData<T>(key: string, mockData: T[]): T[] {
     if (typeof window === 'undefined') {
@@ -58,27 +58,28 @@ function saveData<T>(key: DataType | string, data: T[] | string) {
 }
 
 // --- Backup and Restore ---
-export function exportAllData() {
+export function exportSelectedData(keys: string[]) {
   if (typeof window === 'undefined') {
     return {};
   }
-  const allData: { [key: string]: any } = {};
-  ALL_DATA_KEYS.forEach(key => {
+  const selectedData: { [key: string]: any } = {};
+  keys.forEach(key => {
     const data = localStorage.getItem(key);
     if (data) {
-      allData[key] = JSON.parse(data);
+      selectedData[key] = JSON.parse(data);
     }
   });
-  return allData;
+  return selectedData;
 }
 
 export function importAllData(data: { [key: string]: any }) {
     if (typeof window === 'undefined') {
         return;
     }
-    ALL_DATA_KEYS.forEach(key => {
-        if (data[key]) {
-            localStorage.setItem(key, JSON.stringify(data[key]));
+    // Import all keys present in the file
+    Object.keys(data).forEach(key => {
+        if (ALL_DATA_KEYS.includes(key) && data[key]) {
+             localStorage.setItem(key, JSON.stringify(data[key]));
         }
     });
 }
@@ -126,6 +127,7 @@ export function getMapImageUrl(): string {
     return PlaceHolderImages.find(img => img.id === 'schematic-map')?.imageUrl || "";
   }
   const storedUrl = localStorage.getItem(MAP_IMAGE_URL_KEY);
+  const defaultUrl = PlaceHolderImages.find(img => img.id === 'schematic-map')?.imageUrl || "";
   if (storedUrl) {
     // Check if the stored URL is a JSON string or a plain string
     try {
@@ -136,7 +138,6 @@ export function getMapImageUrl(): string {
       return storedUrl;
     }
   }
-  const defaultUrl = PlaceHolderImages.find(img => img.id === 'schematic-map')?.imageUrl || "";
   localStorage.setItem(MAP_IMAGE_URL_KEY, defaultUrl);
   return defaultUrl;
 }
