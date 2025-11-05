@@ -123,7 +123,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
             onMouseDown={(e) => handleMouseDown(e, item.id)}
             aria-label={getItemLabel(item)}
           >
-            <ItemIcon item={item} className={`h-8 w-8 text-primary drop-shadow-md transition-transform ${!isEditMode && 'group-hover:scale-125'}`} />
+            <ItemIcon item={item} className={`h-6 w-6 text-primary drop-shadow-md transition-transform ${!isEditMode && 'group-hover:scale-125'}`} />
              <span className={`absolute -top-6 left-1/2 -translate-x-1/2 bg-card text-card-foreground px-2 py-1 text-xs rounded-md shadow-lg transition-opacity whitespace-nowrap ${isEditMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               {getItemLabel(item)}
             </span>
