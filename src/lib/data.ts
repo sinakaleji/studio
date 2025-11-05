@@ -2,9 +2,9 @@
 import type { Personnel, Villa, BoardMember, Building } from './types';
 
 export const mockPersonnel: Personnel[] = [
-  { id: 'p1', personnelNumber: '001', firstName: 'اسحاق', lastName: '', role: 'خدمات', contact: '0910-305-3794', documents: [] },
-  { id: 'p2', personnelNumber: '002', firstName: 'کابچی', lastName: '', role: 'باغبان', contact: '0911-744-4694', documents: [] },
-  { id: 'p3', personnelNumber: '003', firstName: 'فرهنگ', lastName: '', role: 'نگهبان', contact: '0933-488-1914', documents: [] },
+  { id: 'p1', personnelNumber: '001', firstName: 'اسحاق', lastName: 'اسحاقی', role: 'خدمات', contact: '0910-305-3794', documents: [] },
+  { id: 'p2', personnelNumber: '002', firstName: 'رضا', lastName: 'کابچی', role: 'باغبان', contact: '0911-744-4694', documents: [] },
+  { id: 'p3', personnelNumber: '003', firstName: 'فرهنگ', lastName: 'فرهنگی', role: 'نگهبان', contact: '0933-488-1914', documents: [] },
   { id: 'p4', personnelNumber: '004', firstName: 'ناصر', lastName: 'رمضان', role: 'نگهبان', contact: '09**-***-****', documents: [] },
 ];
 
