@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import type { Villa, Building } from "@/lib/types";
+import type { Villa, Building, VillaStatus } from "@/lib/types";
 import { useState, useRef, type MouseEvent, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toPersianDigits } from "@/lib/utils";
@@ -32,6 +32,13 @@ const itemIcons = {
 const ItemIcon = ({ item, ...props }: {item: MapItem} & React.SVGProps<SVGSVGElement>) => {
     const Icon = item.itemType === 'villa' ? itemIcons.villa : itemIcons[item.type];
     return <Icon {...props} />;
+};
+
+const statusMap: { [key in VillaStatus]: { text: string; variant: "default" | "secondary" | "destructive" | "outline" } } = {
+  'owner-occupied': { text: 'مالک ساکن', variant: 'secondary' },
+  'rented': { text: 'اجاره', variant: 'destructive' },
+  'vacant': { text: 'خالی', variant: 'outline' },
+  'for-sale': { text: 'برای فروش', variant: 'default' },
 };
 
 
@@ -127,7 +134,7 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
           src={mapImageUrl}
           alt="نقشه شماتیک شهرک"
           fill
-          className="object-contain pointer-events-none" // Prevent image from interfering with mouse events
+          className="object-contain pointer-events-none"
         />
       )}
       <div className="absolute inset-0">
@@ -172,13 +179,11 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                 </div>
                  <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">وضعیت:</span>
-                  {selectedVilla.isRented ? (
-                    <Badge variant="destructive">اجاره</Badge>
-                  ) : (
-                    <Badge variant="secondary">مالک ساکن</Badge>
-                  )}
+                    <Badge variant={statusMap[selectedVilla.status]?.variant || 'outline'}>
+                        {statusMap[selectedVilla.status]?.text || selectedVilla.status}
+                    </Badge>
                 </div>
-                {selectedVilla.isRented && (
+                {selectedVilla.status === 'rented' && (
                   <>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">مستاجر:</span>
@@ -192,8 +197,8 @@ export default function SchematicMap({ items, mapImageUrl, isEditMode, onItemMov
                 )}
               </div>
               <Button onClick={() => {
-                setSelectedVilla(null);
                 onEditVilla(selectedVilla);
+                setSelectedVilla(null);
               }}>
                 ویرایش اطلاعات
               </Button>

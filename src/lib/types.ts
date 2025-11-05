@@ -15,13 +15,14 @@ export interface Personnel {
   documents?: Document[];
 }
 
+export type VillaStatus = 'owner-occupied' | 'rented' | 'vacant' | 'for-sale';
+
 export interface Villa {
   id: string;
   villaNumber: number;
   ownerFirstName: string;
-
   ownerLastName: string;
-  isRented: boolean;
+  status: VillaStatus;
   tenantFirstName?: string;
   tenantLastName?: string;
   tenantContact?: string;
