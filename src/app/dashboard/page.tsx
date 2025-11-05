@@ -13,11 +13,16 @@ import { getVillas, getPersonnel } from "@/lib/data-manager";
 import type { Villa, Personnel } from "@/lib/types";
 import { toPersianDigits } from "@/lib/utils";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogTrigger,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -140,34 +145,43 @@ export default function DashboardPage() {
                 <CardDescription>خلاصه وضعیت ویلاهای شهرک</CardDescription>
             </CardHeader>
             <CardContent>
-                <TooltipProvider>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                    {statsCards.map((stat) => (
-                        <Tooltip key={stat.title}>
-                        <TooltipTrigger asChild>
-                            <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                                <stat.icon className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stat.value}</div>
-                            </CardContent>
-                            </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {stat.data.length > 0 ? (
-                            <p>
-                                شماره واحدها: {toPersianDigits(stat.data.map(v => v.villaNumber).join(', '))}
-                            </p>
-                            ) : (
-                                <p>{stat.tooltip}</p>
-                            )}
-                        </TooltipContent>
-                        </Tooltip>
-                    ))}
-                    </div>
-                </TooltipProvider>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {statsCards.map((stat) => (
+                    <AlertDialog key={stat.title}>
+                      <AlertDialogTrigger asChild>
+                        <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                            <stat.icon className="h-4 w-4 text-muted-foreground" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{stat.value}</div>
+                          </CardContent>
+                        </Card>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>ویلاهای {stat.title}</AlertDialogTitle>
+                          {stat.data.length > 0 ? (
+                            <AlertDialogDescription>
+                              لیست شماره ویلاهای مربوط به این دسته:
+                              <div className="pt-4 font-mono text-lg text-foreground text-center tracking-widest">
+                                {toPersianDigits(stat.data.map(v => v.villaNumber).join(' - '))}
+                              </div>
+                            </AlertDialogDescription>
+                          ) : (
+                            <AlertDialogDescription>
+                              {stat.title === "تعداد کل ویلاها" ? `در حال حاضر ${stat.value} ویلا ثبت شده است.` : "موردی برای نمایش در این دسته وجود ندارد."}
+                            </AlertDialogDescription>
+                          )}
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>بستن</AlertDialogCancel>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                ))}
+                </div>
             </CardContent>
         </Card>
 
