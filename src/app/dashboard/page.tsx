@@ -132,39 +132,49 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-       <TooltipProvider>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {statsCards.map((stat) => (
-            <Tooltip key={stat.title}>
-              <TooltipTrigger asChild>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                    <stat.icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                  </CardContent>
-                </Card>
-              </TooltipTrigger>
-              <TooltipContent>
-                {stat.data.length > 0 ? (
-                  <p>
-                    شماره واحدها: {toPersianDigits(stat.data.map(v => v.villaNumber).join(', '))}
-                  </p>
-                ) : (
-                    <p>{stat.tooltip}</p>
-                )}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-           <Clock />
-        </div>
-      </TooltipProvider>
+      <GuardShiftCard />
+      
+       <Card>
+            <CardHeader>
+                <CardTitle>آمار ویلاها</CardTitle>
+                <CardDescription>خلاصه وضعیت ویلاهای شهرک</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <TooltipProvider>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    {statsCards.map((stat) => (
+                        <Tooltip key={stat.title}>
+                        <TooltipTrigger asChild>
+                            <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stat.value}</div>
+                            </CardContent>
+                            </Card>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {stat.data.length > 0 ? (
+                            <p>
+                                شماره واحدها: {toPersianDigits(stat.data.map(v => v.villaNumber).join(', '))}
+                            </p>
+                            ) : (
+                                <p>{stat.tooltip}</p>
+                            )}
+                        </TooltipContent>
+                        </Tooltip>
+                    ))}
+                    </div>
+                </TooltipProvider>
+            </CardContent>
+        </Card>
+
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="lg:col-span-4">
-            <GuardShiftCard />
+        <div className="lg:col-span-4 grid grid-cols-1 gap-4">
+            <Clock />
         </div>
         <div className="lg:col-span-3">
             <Card>
